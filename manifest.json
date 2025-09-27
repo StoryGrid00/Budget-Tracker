@@ -2,7 +2,7 @@
     "name": "Budget Tracker - Smart Money Management",
     "short_name": "Budget Tracker",
     "description": "Smart money management with budgets and goals",
-    "start_url": "/",
+    "start_url": "./",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4F46E5",
@@ -48,5 +48,6 @@
             "sizes": "512x512",
             "type": "image/png"
         }
-    ]
+    ],
+    "scope": "./"
 }
