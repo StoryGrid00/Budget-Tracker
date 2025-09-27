@@ -232,80 +232,69 @@
             opacity: 0.8;
         }
         
-        .balance-charts {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            width: 100%;
-            max-width: 100%;
-        }
-        
-        .chart-container-small {
+        .charts-section {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 12px;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .chart-section {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            min-height: 140px;
-            overflow: hidden;
+            padding: 16px;
+            width: 100%;
         }
         
-        .chart-wrapper-small {
+        .chart-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        
+        .chart-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .chart-canvas {
             width: 80px;
             height: 80px;
-            position: relative;
             flex-shrink: 0;
-            margin-bottom: 8px;
         }
         
-        .chart-wrapper-small canvas {
+        .chart-canvas canvas {
             width: 100% !important;
             height: 100% !important;
             filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.3));
         }
         
-        .chart-container canvas {
-            width: 100% !important;
-            height: 100% !important;
-            filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.4));
-        }
-        
-        .chart-label {
-            font-size: 11px;
-            opacity: 0.9;
-            text-align: center;
-            font-weight: 500;
-            margin-bottom: 8px;
-            white-space: nowrap;
-        }
-        
-        .chart-legend {
+        .chart-legend-container {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            align-items: center;
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
+            gap: 8px;
+            flex: 1;
+            align-items: flex-end;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: 8px;
-            opacity: 0.8;
+            gap: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
         }
         
-        .legend-color {
-            width: 6px;
-            height: 6px;
-            border-radius: 2px;
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
             flex-shrink: 0;
         }
         
@@ -1090,23 +1079,13 @@
                 gap: 20px;
             }
             
-            .balance-charts {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-            
-            .chart-container-small {
-                min-height: 120px;
-                padding: 8px;
-            }
-            
-            .chart-wrapper-small {
+            .chart-canvas {
                 width: 70px;
                 height: 70px;
             }
             
             .legend-item {
-                font-size: 7px;
+                font-size: 12px;
             }
             
             .quick-stats {
@@ -1117,6 +1096,26 @@
             .stat-card {
                 padding: 12px;
             }
+        }
+        
+        /* Confetti (lightweight, 2–3s) */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 8px;
+            height: 12px;
+            border-radius: 1px;
+            opacity: .95;
+            pointer-events: none;
+            will-change: transform, opacity;
+            animation: confetti-fall var(--cfdur, 2.6s) linear forwards;
+        }
+        @keyframes confetti-fall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        /* Accessibility: honor user motion prefs */
+        @media (prefers-reduced-motion: reduce) {
+            .confetti { display: none !important; animation: none !important; }
         }
     </style>
 </head>
@@ -1137,6 +1136,7 @@
         <!-- Balance Card -->
         <div class="balance-card">
             <div class="balance-content">
+                <!-- Balance Info Section -->
                 <div class="balance-info">
                     <div class="balance-amount" id="balance">$0.00</div>
                     <div class="balance-label">Current Balance</div>
@@ -1151,20 +1151,51 @@
                         </div>
                     </div>
                 </div>
-                <div class="balance-charts">
-                    <div class="chart-container-small">
-                        <div class="chart-wrapper-small">
-                            <canvas id="expenseChart"></canvas>
+                
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <!-- Expenses Chart -->
+                    <div class="chart-section">
+                        <div class="chart-header">Expenses</div>
+                        <div class="chart-content">
+                            <div class="chart-canvas">
+                                <canvas id="expenseChart"></canvas>
+                            </div>
+                            <div class="chart-legend-container">
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background-color: #00FF88;"></div>
+                                    <span>Food & Dining</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background-color: #FF4757;"></div>
+                                    <span>Transportation</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background-color: #FFA726;"></div>
+                                    <span>Shopping</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="chart-label">Expenses</div>
-                        <div class="chart-legend" id="expenseLegend"></div>
                     </div>
-                    <div class="chart-container-small">
-                        <div class="chart-wrapper-small">
-                            <canvas id="budgetChart"></canvas>
+                    
+                    <!-- Budget Chart -->
+                    <div class="chart-section">
+                        <div class="chart-header">Budget</div>
+                        <div class="chart-content">
+                            <div class="chart-canvas">
+                                <canvas id="budgetChart"></canvas>
+                            </div>
+                            <div class="chart-legend-container">
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background-color: #00FF88;"></div>
+                                    <span>Used</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background-color: #E5E7EB;"></div>
+                                    <span>Remaining</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="chart-label">Budget</div>
-                        <div class="chart-legend" id="budgetLegend"></div>
                     </div>
                 </div>
             </div>
@@ -1174,7 +1205,7 @@
         <div class="quick-stats">
             <div class="stat-card">
                 <div class="stat-value" id="monthlySpending">$0.00</div>
-                <div class="stat-label">This Month</div>
+                <div class="stat-label">Expenses This Month</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="goalsProgress">0%</div>
@@ -1405,6 +1436,37 @@
             
             <div class="modal-footer">
                 <button class="btn btn-primary btn-full" onclick="addGoal()">Create Goal</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contribute Funds Modal -->
+    <div id="contributeFundsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Contribute to Goal</h3>
+                <button class="close-btn" onclick="closeModal('contributeFundsModal')">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="contributeGoalName">Goal</label>
+                    <input type="text" id="contributeGoalName" class="form-input" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="contributeAmount">Contribution Amount</label>
+                    <input type="number" id="contributeAmount" class="form-input" placeholder="0.00" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="contributeNote">Note (Optional)</label>
+                    <input type="text" id="contributeNote" class="form-input" placeholder="Enter a note for this contribution">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-full" onclick="contributeToGoal()">Add Contribution</button>
             </div>
         </div>
     </div>
@@ -1941,6 +2003,16 @@
             const container = document.getElementById('budgetsList');
             
             if (budgets.length === 0) {
+                // When no budgets are set, show actual expense data
+                const totalExpenses = transactions
+                    .filter(t => t.type === 'expense')
+                    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                
+                // Update budget overview with actual data
+                document.getElementById('totalBudgetAmount').textContent = formatCurrency(0);
+                document.getElementById('totalBudgetSpent').textContent = formatCurrency(totalExpenses);
+                document.getElementById('totalBudgetRemaining').textContent = formatCurrency(-totalExpenses);
+                
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📊</div>
@@ -2018,7 +2090,7 @@
                 const isCompleted = percentage >= 100;
                 
                 return `
-                    <div class="goal-item slide-in">
+                    <div class="savings-card goal-item slide-in" data-goal-id="goal-${goal.id}" data-current="${formatCurrency(goal.current)}" data-target="${formatCurrency(goal.target)}">
                         <div class="goal-left">
                             <div class="goal-icon" style="background: ${getIconBackground(goal.name)}">
                                 🎯
@@ -2037,6 +2109,7 @@
                             <div class="goal-percentage">${Math.round(percentage)}%</div>
                         </div>
                         <div class="goal-amount">
+                            <button class="add-savings-btn btn" style="background: var(--success); color: white; padding: 4px 8px; font-size: 12px; margin-right: 8px;" onclick="showContributeFundsModal(${goal.id})">+ Add</button>
                             <button class="delete-btn" onclick="deleteGoal(${goal.id})">×</button>
                         </div>
                     </div>
@@ -2675,6 +2748,64 @@
         });
 
         // Keyboard shortcuts
+        // Contribute funds functionality
+        function showContributeFundsModal(goalId) {
+            const goal = goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            document.getElementById('contributeGoalName').value = goal.name;
+            document.getElementById('contributeAmount').value = '';
+            document.getElementById('contributeNote').value = '';
+            
+            // Store the goal ID for later use
+            document.getElementById('contributeFundsModal').setAttribute('data-goal-id', goalId);
+            
+            showModal('contributeFundsModal');
+        }
+        
+        function contributeToGoal() {
+            const goalId = parseInt(document.getElementById('contributeFundsModal').getAttribute('data-goal-id'));
+            const amount = parseFloat(document.getElementById('contributeAmount').value);
+            const note = document.getElementById('contributeNote').value;
+            
+            if (!amount || amount <= 0) {
+                showNotification('Please enter a valid contribution amount', 'error');
+                return;
+            }
+            
+            const goal = goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            // Update goal current amount
+            goal.current += amount;
+            
+            // Add a transaction record for the contribution
+            const contribution = {
+                id: Date.now(),
+                type: 'contribution',
+                description: `Contribution to ${goal.name}${note ? ` - ${note}` : ''}`,
+                amount: amount,
+                category: 'Savings',
+                date: new Date().toISOString().split('T')[0],
+                recurring: false
+            };
+            
+            transactions.push(contribution);
+            
+            // Save to localStorage
+            localStorage.setItem('goals', JSON.stringify(goals));
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            
+            // Update displays
+            updateGoalsList();
+            updateTransactionsList();
+            updateBalanceCard();
+            updateQuickStats();
+            
+            closeModal('contributeFundsModal');
+            showNotification(`Successfully contributed ${formatCurrency(amount)} to ${goal.name}!`);
+        }
+
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 const activeModal = document.querySelector('.modal.active');
@@ -2683,6 +2814,80 @@
                 }
             }
         });
+
+        // Confetti Animation System
+        (() => {
+            // ---------- Utilities ----------
+            const parseMoney = (str) => {
+                // accepts '$10,000.00' or '10000' etc.
+                if (typeof str !== 'string') return Number(str || 0);
+                return Number(str.replace(/[^0-9.\-]/g, '')) || 0;
+            };
+
+            const lsKey = (goalId) => `savings_goal_celebrated:${goalId}`;
+
+            // ---------- Confetti ----------
+            const Confetti = {
+                burst(count = 48) {
+                    for (let i = 0; i < count; i++) {
+                        const n = document.createElement('div');
+                        n.className = 'confetti';
+                        n.style.left = (Math.random() * window.innerWidth) + 'px';
+                        n.style.backgroundColor = `hsl(${Math.random() * 360},100%,55%)`;
+                        n.style.transform = `translateY(0) rotate(${Math.random()*60-30}deg)`;
+                        n.style.setProperty('--cfdur', (2 + Math.random() * 1.5) + 's');
+                        document.body.appendChild(n);
+                        setTimeout(() => n.remove(), 3500);
+                    }
+                }
+            };
+
+            // ---------- Goal Check ----------
+            function maybeCelebrate(goalEl) {
+                if (!goalEl) return;
+                const goalId = goalEl.dataset.goalId || 'goal-unknown';
+                // Already celebrated?
+                if (localStorage.getItem(lsKey(goalId)) === '1') return;
+
+                const current = parseMoney(goalEl.dataset.current);
+                const target  = parseMoney(goalEl.dataset.target);
+                if (target > 0 && current >= target) {
+                    Confetti.burst(56);
+                    localStorage.setItem(lsKey(goalId), '1'); // fire once
+                }
+            }
+
+            // Optional helper: reset celebration flag (call when user edits goal downward, etc.)
+            window.resetGoalCelebration = (goalId) => localStorage.removeItem(lsKey(goalId));
+
+            // ---------- Check for Goal Achievement ----------
+            // Function to check all goals for achievements after updates
+            function checkAllGoalsForAchievement() {
+                const goalCards = document.querySelectorAll('.savings-card');
+                goalCards.forEach(card => {
+                    const goalId = card.dataset.goalId;
+                    if (goalId) {
+                        const goalIdNum = parseInt(goalId.replace('goal-', ''));
+                        const goal = goals.find(g => g.id === goalIdNum);
+                        if (goal) {
+                            // Update data attributes to reflect current state
+                            card.dataset.current = formatCurrency(goal.current);
+                            card.dataset.target = formatCurrency(goal.target);
+                            // Check if this goal should trigger confetti
+                            maybeCelebrate(card);
+                        }
+                    }
+                });
+            }
+
+            // Hook into the existing updateGoalsList function to check for achievements
+            const originalUpdateGoalsList = window.updateGoalsList;
+            window.updateGoalsList = function() {
+                originalUpdateGoalsList.call(this);
+                // Check for achievements after the goals list is updated
+                setTimeout(checkAllGoalsForAchievement, 50);
+            };
+        })();
     </script>
 </body>
 </html>
