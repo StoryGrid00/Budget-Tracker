@@ -282,13 +282,30 @@
             align-items: flex-end;
         }
         
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+        
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
+            gap: 6px;
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.8);
             white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+        
+        .legend-item.legend-hidden {
+            display: none;
+        }
+        
+        .legend-item.legend-visible {
+            display: flex;
         }
         
         .legend-dot {
@@ -296,6 +313,97 @@
             height: 8px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+        
+        .expand-icon {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .expand-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .chart-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .budget-dropdown-container {
+            position: relative;
+        }
+        
+        .budget-dropdown-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 6px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+        
+        .budget-dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .budget-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            margin-top: 4px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .budget-dropdown-menu.show {
+            display: block;
+        }
+        
+        .budget-dropdown-item {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .budget-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .budget-dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .budget-dropdown-item.active {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+            font-weight: 500;
         }
         
         .quick-stats {
@@ -558,12 +666,60 @@
             color: var(--gray-900);
         }
         
+        .insights-scroll-container {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .insights-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .insights-scroll-container::-webkit-scrollbar-track {
+            background: var(--gray-200);
+            border-radius: 3px;
+        }
+        
+        .insights-scroll-container::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 3px;
+        }
+        
+        .insights-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+        
+        [data-theme="dark"] .insights-scroll-container::-webkit-scrollbar-track {
+            background: var(--gray-300);
+        }
+        
+        [data-theme="dark"] .insights-scroll-container::-webkit-scrollbar-thumb {
+            background: var(--gray-500);
+        }
+        
+        [data-theme="dark"] .insights-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-600);
+        }
+        
         .chart-container {
             background: var(--gray-100);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
             box-shadow: var(--shadow);
+            flex-shrink: 0;
+            min-width: 300px;
+            width: 300px;
+        }
+        
+        .insights-scroll-container .chart-container {
+            margin-bottom: 0;
         }
         
         [data-theme="dark"] .chart-container {
@@ -752,6 +908,96 @@
             transition: all 0.2s ease;
             background: var(--gray-100);
             color: var(--gray-900);
+        }
+        
+        .form-select {
+            padding-right: 40px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+        }
+        
+        [data-theme="dark"] .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%94a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        }
+        
+        .daily-limit-input {
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+        
+        .daily-limit-input::-webkit-outer-spin-button,
+        .daily-limit-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .daily-limit-input {
+            padding-right: 40px !important;
+        }
+        
+        .daily-limit-input + .spinner-controls {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            width: 16px;
+            height: 32px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            background: var(--gray-100);
+            overflow: hidden;
+        }
+        
+        .spinner-up, .spinner-down {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 8px;
+            color: var(--gray-600);
+            user-select: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: transparent;
+        }
+        
+        .spinner-up {
+            border-bottom: 1px solid var(--gray-300);
+        }
+        
+        .spinner-up:hover, .spinner-down:hover {
+            background: var(--gray-200);
+        }
+        
+        .spinner-up:active, .spinner-down:active {
+            background: var(--gray-300);
+        }
+        
+        [data-theme="dark"] .daily-limit-input + .spinner-controls {
+            border-color: var(--gray-400);
+            background: var(--gray-300);
+        }
+        
+        [data-theme="dark"] .spinner-up {
+            border-bottom-color: var(--gray-400);
+        }
+        
+        [data-theme="dark"] .spinner-up, [data-theme="dark"] .spinner-down {
+            color: var(--gray-600);
+        }
+        
+        [data-theme="dark"] .spinner-up:hover, [data-theme="dark"] .spinner-down:hover {
+            background: var(--gray-400);
         }
         
         [data-theme="dark"] .form-input,
@@ -1096,6 +1342,16 @@
             .stat-card {
                 padding: 12px;
             }
+            
+            .chart-container {
+                min-width: 280px;
+                width: 280px;
+                padding: 16px;
+            }
+            
+            .insights-scroll-container {
+                gap: 12px;
+            }
         }
         
         /* Confetti (lightweight, 2–3s) */
@@ -1156,23 +1412,53 @@
                 <div class="charts-section">
                     <!-- Expenses Chart -->
                     <div class="chart-section">
-                        <div class="chart-header">Expenses</div>
+                        <div class="chart-header-container">
+                            <div class="chart-header">Expenses</div>
+                            <div class="expense-expand-container">
+                                <button class="budget-dropdown-btn" id="expenseLegendExpandBtn" onclick="toggleExpenseLegend()">
+                                    <span id="expenseLegendExpandText">Show More</span>
+                                    <span class="dropdown-arrow" id="expenseLegendExpandIcon">▼</span>
+                                </button>
+                            </div>
+                        </div>
                         <div class="chart-content">
                             <div class="chart-canvas">
                                 <canvas id="expenseChart"></canvas>
                             </div>
-                            <div class="chart-legend-container">
-                                <div class="legend-item">
-                                    <div class="legend-dot" style="background-color: #00FF88;"></div>
-                                    <span>Food & Dining</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-dot" style="background-color: #FF4757;"></div>
-                                    <span>Transportation</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-dot" style="background-color: #FFA726;"></div>
-                                    <span>Shopping</span>
+                            <div class="chart-legend-container" id="expenseLegendContainer">
+                                <div class="legend-grid" id="expenseLegendGrid">
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #00FF88;"></div>
+                                        <span>Food & Dining</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #FF4757;"></div>
+                                        <span>Transportation</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #FFA726;"></div>
+                                        <span>Shopping</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #42A5F5;"></div>
+                                        <span>Entertainment</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #AB47BC;"></div>
+                                        <span>Healthcare</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #66BB6A;"></div>
+                                        <span>Utilities</span>
+                                    </div>
+                                    <div class="legend-item legend-hidden">
+                                        <div class="legend-dot" style="background-color: #FF7043;"></div>
+                                        <span>Education</span>
+                                    </div>
+                                    <div class="legend-item legend-hidden">
+                                        <div class="legend-dot" style="background-color: #FFCA28;"></div>
+                                        <span>Insurance</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1180,7 +1466,18 @@
                     
                     <!-- Budget Chart -->
                     <div class="chart-section">
-                        <div class="chart-header">Budget</div>
+                        <div class="chart-header-container">
+                            <div class="chart-header">Budget</div>
+                            <div class="budget-dropdown-container" id="budgetDropdownContainer" style="display: none;">
+                                <button class="budget-dropdown-btn" id="budgetDropdownBtn" onclick="toggleBudgetDropdown()">
+                                    <span id="selectedBudgetName">All Budgets</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="budget-dropdown-menu" id="budgetDropdownMenu">
+                                    <div class="budget-dropdown-item active" onclick="selectBudget('all')">All Budgets</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="chart-content">
                             <div class="chart-canvas">
                                 <canvas id="budgetChart"></canvas>
@@ -1213,7 +1510,7 @@
             </div>
             <div class="stat-card" id="dailyLimitCard" onclick="showSettings()">
                 <div class="stat-value" id="dailyLimitValue">Set limit</div>
-                <div class="stat-label">Daily Limit</div>
+                <div class="stat-label">Set limit ✏️</div>
                 <div id="dailyLimitProgress" class="daily-limit-progress" style="display: none;">
                     <div id="dailyLimitProgressBar" class="daily-limit-progress-bar"></div>
                 </div>
@@ -1301,24 +1598,26 @@
         
         <!-- Insights Tab -->
         <div id="insights" class="tab-content">
-            <div class="chart-container">
-                <h3 class="chart-title">Spending Overview</h3>
-                <div class="chart-wrapper">
-                    <canvas id="dashboardChart"></canvas>
+            <div class="insights-scroll-container">
+                <div class="chart-container">
+                    <h3 class="chart-title">Spending Overview</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="dashboardChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="chart-container">
-                <h3 class="chart-title">Budget vs Spending</h3>
-                <div class="chart-wrapper">
-                    <canvas id="budgetOverviewChart"></canvas>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Budget vs Spending</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="budgetOverviewChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="chart-container">
-                <h3 class="chart-title">Monthly Overview</h3>
-                <div class="chart-wrapper">
-                    <canvas id="monthlyOverviewChart"></canvas>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Monthly Overview</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyOverviewChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1475,7 +1774,7 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Settings</h3>
+                <h2 class="modal-title">Set Limit</h2>
                 <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
             </div>
             
@@ -1494,12 +1793,19 @@
                 
                 <div class="form-group">
                     <label class="form-label" for="dailyLimit">Daily Limit ($/day)</label>
-                    <input type="number" id="dailyLimit" class="form-input" placeholder="0.00" step="0.01">
+                    <input type="number" id="dailyLimit" class="form-input daily-limit-input" placeholder="0.00" step="0.01">
+                        <div class="spinner-controls">
+                            <div class="spinner-up" onclick="incrementDailyLimit()">▲</div>
+                            <div class="spinner-down" onclick="decrementDailyLimit()">▼</div>
+                        </div>
                 </div>
             </div>
             
             <div class="modal-footer">
+                <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary btn-full" onclick="resetDailyLimit()">No daily limit</button>
                 <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Settings</button>
+            </div>
             </div>
         </div>
     </div>
@@ -1581,11 +1887,16 @@
             updateDashboard();
             
             // Initialize logo based on current theme
-            const currentTheme = document.body.getAttribute('data-theme') || 'light';
+            const currentTheme = document.body.getAttribute("data-theme") || "light";
             updateLogo(currentTheme);
             
             // Set up recurring checkbox handler
-            document.getElementById('recurring').addEventListener('change', toggleRecurringOptions);
+            document.getElementById("recurring").addEventListener("change", toggleRecurringOptions);
+
+            // Initialize expense legend to be expanded by default
+            document.getElementById("expenseLegendGrid").classList.add("expanded");
+            document.getElementById("expenseLegendExpandText").textContent = "Show Less";
+            document.getElementById("expenseLegendExpandIcon").classList.add("rotated");
         });
 
         // Logo management
@@ -1851,7 +2162,7 @@
         }
 
         // Settings management
-        function saveSettings() {
+function saveSettings() {
             settings.enableRoundups = document.getElementById('enableRoundups').checked;
             settings.roundupGoal = document.getElementById('roundupGoal').value;
             settings.dailyLimit = parseFloat(document.getElementById('dailyLimit').value) || 0;
@@ -1860,6 +2171,27 @@
             updateDashboard();
             closeModal('settingsModal');
             showNotification('Settings saved');
+        }
+
+        function resetDailyLimit() {
+            localStorage.removeItem("dailyLimit");
+            document.getElementById("dailyLimit").value = "";
+            updateDailyLimit();
+            closeModal("settingsModal");
+        }
+        
+        function incrementDailyLimit() {
+            const input = document.getElementById('dailyLimit');
+            const currentValue = parseFloat(input.value) || 0;
+            const newValue = (currentValue + 0.01).toFixed(2);
+            input.value = newValue;
+        }
+        
+        function decrementDailyLimit() {
+            const input = document.getElementById('dailyLimit');
+            const currentValue = parseFloat(input.value) || 0;
+            const newValue = Math.max(0, currentValue - 0.01).toFixed(2);
+            input.value = newValue;
         }
 
         function updateGoalOptions() {
@@ -2069,6 +2401,8 @@
                     </div>
                 `;
             }).join('');
+            
+            updateBudgetDropdown();
         }
 
         function updateGoalsList() {
@@ -2344,8 +2678,15 @@
         }
 
         function updateBudgetDonutChart() {
-            const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
-            const totalSpent = budgets.reduce((sum, b) => {
+            let filteredBudgets = budgets;
+            
+            // Filter budgets based on selected filter
+            if (selectedBudgetFilter !== 'all') {
+                filteredBudgets = budgets.filter(b => b.id === selectedBudgetFilter);
+            }
+            
+            const totalBudget = filteredBudgets.reduce((sum, b) => sum + b.amount, 0);
+            const totalSpent = filteredBudgets.reduce((sum, b) => {
                 const spent = transactions
                     .filter(t => t.type === 'expense' && t.category === b.category)
                     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -2548,6 +2889,102 @@
             const recurringOptions = document.getElementById('recurringOptions');
             const isChecked = document.getElementById('recurring').checked;
             recurringOptions.style.display = isChecked ? 'block' : 'none';
+        }
+
+        function toggleExpenseLegend() {
+            const hiddenItems = document.querySelectorAll('#expenseLegendGrid .legend-hidden');
+            const expandBtn = document.getElementById('expenseLegendExpandBtn');
+            const expandText = document.getElementById('expenseLegendExpandText');
+            const expandIcon = document.getElementById('expenseLegendExpandIcon');
+            
+            const legendGrid = document.getElementById('expenseLegendGrid');
+            const allLegendItems = legendGrid.querySelectorAll('.legend-item');
+            const visibleItemsCount = 6; // Number of items initially visible
+            
+            const isExpanded = legendGrid.classList.contains('expanded');
+
+            if (isExpanded) {
+                // Currently expanded, so collapse
+                allLegendItems.forEach((item, index) => {
+                    if (index >= visibleItemsCount) {
+                        item.classList.remove('legend-visible');
+                        item.classList.add('legend-hidden');
+                    }
+                });
+                legendGrid.classList.remove('expanded');
+                expandText.textContent = 'Show More';
+                expandIcon.classList.remove('rotated');
+            } else {
+                // Currently collapsed, so expand
+                allLegendItems.forEach(item => {
+                    item.classList.remove('legend-hidden');
+                    item.classList.add('legend-visible');
+                });
+                legendGrid.classList.add('expanded');
+                expandText.textContent = 'Show Less';
+                expandIcon.classList.add('rotated');
+            }
+            
+
+            
+
+        }
+
+        let selectedBudgetFilter = 'all';
+
+        function toggleBudgetDropdown() {
+            const menu = document.getElementById('budgetDropdownMenu');
+            const arrow = document.querySelector('.dropdown-arrow');
+            
+            menu.classList.toggle('show');
+            arrow.classList.toggle('rotated');
+        }
+
+        function selectBudget(budgetId) {
+            selectedBudgetFilter = budgetId;
+            
+            // Update selected budget name
+            const selectedName = document.getElementById('selectedBudgetName');
+            if (budgetId === 'all') {
+                selectedName.textContent = 'All Budgets';
+            } else {
+                const budget = budgets.find(b => b.id === budgetId);
+                selectedName.textContent = budget ? budget.category : 'All Budgets';
+            }
+            
+            // Update active state in dropdown
+            document.querySelectorAll('.budget-dropdown-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Close dropdown
+            document.getElementById('budgetDropdownMenu').classList.remove('show');
+            document.querySelector('.dropdown-arrow').classList.remove('rotated');
+            
+            // Update budget chart
+            updateBudgetDonutChart();
+        }
+
+        function updateBudgetDropdown() {
+            const container = document.getElementById('budgetDropdownContainer');
+            const menu = document.getElementById('budgetDropdownMenu');
+            
+            // Show dropdown when there are budgets (even just one for demonstration)
+            if (budgets.length >= 1) {
+                container.style.display = 'block';
+                
+                // Update dropdown menu items
+                menu.innerHTML = `
+                    <div class="budget-dropdown-item ${selectedBudgetFilter === 'all' ? 'active' : ''}" onclick="selectBudget('all')">All Budgets</div>
+                    ${budgets.map(budget => `
+                        <div class="budget-dropdown-item ${selectedBudgetFilter === budget.id ? 'active' : ''}" onclick="selectBudget(${budget.id})">${budget.category}</div>
+                    `).join('')}
+                `;
+            } else {
+                container.style.display = 'none';
+                selectedBudgetFilter = 'all';
+            }
         }
 
         function showNotification(message, type = 'success') {
@@ -2891,4 +3328,8 @@
     </script>
 </body>
 </html>
+
+
+
+
 
