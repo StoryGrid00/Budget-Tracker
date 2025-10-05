@@ -776,31 +776,32 @@
         }
         
         .fab {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: var(--primary);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: var(--shadow-lg);
-            transition: all 0.2s ease;
-            z-index: 1000;
-        }
-        
-        .fab:hover {
-            transform: scale(1.1);
-            background: var(--primary-dark);
-        }
-        
-        .fab:active {
-            transform: scale(1.05);
-        }
-        
+    position: fixed;
+    bottom: 24px;
+    left: 50%;                /* Center horizontally */
+    transform: translateX(-50%); /* Adjust for button width */
+    width: 56px;
+    height: 56px;
+    background: var(--primary);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.fab:hover {
+    transform: translateX(-50%) scale(1.1);
+    background: var(--primary-dark);
+}
+
+.fab:active {
+    transform: translateX(-50%) scale(1.05);
+}
+       
         .modal {
             display: none;
             position: fixed;
