@@ -284,10 +284,44 @@
         
         .legend-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 6px 12px;
             width: 100%;
             max-width: 280px;
+            max-height: 120px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .legend-grid.expanded {
+            max-height: 200px;
+        }
+        
+        .legend-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .legend-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        .legend-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        
+        .legend-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Mobile responsive - single column on narrow screens */
+        @media (max-width: 480px) {
+            .legend-grid {
+                grid-template-columns: 1fr;
+                max-width: 200px;
+            }
         }
         
         .legend-item {
@@ -605,6 +639,9 @@
             font-weight: 500;
             color: var(--gray-900);
             margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
         }
         
         .transaction-meta, .budget-meta, .goal-meta {
@@ -938,67 +975,7 @@
             position: relative;
         }
         
-        .daily-limit-input {
-            padding-right: 40px !important;
-        }
-        
-        .daily-limit-input + .spinner-controls {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            width: 16px;
-            height: 32px;
-            border: 1px solid var(--gray-300);
-            border-radius: 4px;
-            background: var(--gray-100);
-            overflow: hidden;
-        }
-        
-        .spinner-up, .spinner-down {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 8px;
-            color: var(--gray-600);
-            user-select: none;
-            transition: background-color 0.2s ease;
-            border: none;
-            background: transparent;
-        }
-        
-        .spinner-up {
-            border-bottom: 1px solid var(--gray-300);
-        }
-        
-        .spinner-up:hover, .spinner-down:hover {
-            background: var(--gray-200);
-        }
-        
-        .spinner-up:active, .spinner-down:active {
-            background: var(--gray-300);
-        }
-        
-        [data-theme="dark"] .daily-limit-input + .spinner-controls {
-            border-color: var(--gray-400);
-            background: var(--gray-300);
-        }
-        
-        [data-theme="dark"] .spinner-up {
-            border-bottom-color: var(--gray-400);
-        }
-        
-        [data-theme="dark"] .spinner-up, [data-theme="dark"] .spinner-down {
-            color: var(--gray-600);
-        }
-        
-        [data-theme="dark"] .spinner-up:hover, [data-theme="dark"] .spinner-down:hover {
-            background: var(--gray-400);
-        }
+
         
         [data-theme="dark"] .form-input,
         [data-theme="dark"] .form-select {
@@ -1276,6 +1253,8 @@
             border-radius: 12px;
             font-size: 10px;
             margin-left: 8px;
+            white-space: nowrap;
+            display: inline-block;
         }
         
         .over-budget-pill {
@@ -1374,6 +1353,25 @@
             .confetti { display: none !important; animation: none !important; }
         }
     </style>
+
+<style id="hide-contrib-options">
+  /* Surgical hide: only the two specific checkbox rows in the Add Transaction modal */
+  .form-checkbox:has(#contributeSavings),
+  .form-checkbox:has(#contributeDebt) { display: none !important; }
+</style>
+<script id="hide-contrib-options-fallback">
+  // Fallback for browsers without :has()
+  document.addEventListener('DOMContentLoaded', function () {
+    ['contributeSavings','contributeDebt'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) {
+        var row = el.closest('.form-checkbox');
+        if (row) row.style.display = 'none';
+      }
+    });
+  });
+</script>
+
 </head>
 <body>
     <div class="container">
@@ -1508,9 +1506,9 @@
                 <div class="stat-value" id="goalsProgress">0%</div>
                 <div class="stat-label">Goals Progress</div>
             </div>
-            <div class="stat-card" id="dailyLimitCard" onclick="showSettings()">
-                <div class="stat-value" id="dailyLimitValue">Set limit</div>
-                <div class="stat-label">Set limit ✏️</div>
+            <div class="stat-card" id="dailyLimitCard" onclick="showModal('settingsModal')">
+                <div class="stat-value" id="dailyLimitValue">Set Daily Limit</div>
+                <div class="stat-label">Set Daily Limit ✏️</div>
                 <div id="dailyLimitProgress" class="daily-limit-progress" style="display: none;">
                     <div id="dailyLimitProgressBar" class="daily-limit-progress-bar"></div>
                 </div>
@@ -1594,6 +1592,21 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Debt Goals Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Debt Goals</h3>
+                    <button class="add-btn" onclick="showDebtModal()">+ Add</button>
+                </div>
+                <div id="debtsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💳</div>
+                        <div class="empty-state-text">No debts set</div>
+                        <div class="empty-state-subtext">Add debts to track your payoff progress</div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Insights Tab -->
@@ -1658,11 +1671,49 @@
                 </div>
                 
                 <div class="form-checkbox">
+                    <input type="checkbox" id="contributeSavings">
+                    <label for="contributeSavings">Contribute to savings</label>
+                </div>
+                
+                <div id="savingsOptions" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="savingsGoal">Savings Goal</label>
+                        <select id="savingsGoal" class="form-select">
+                            <option value="">Select savings goal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="savingsAmount">Savings Amount</label>
+                        <input type="number" id="savingsAmount" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-checkbox">
+                    <input type="checkbox" id="contributeDebt">
+                    <label for="contributeDebt">Contribute to debt</label>
+                </div>
+                
+                <div id="debtOptions" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="debtGoal">Debt Goal</label>
+                        <select id="debtGoal" class="form-select">
+                            <option value="">Select debt goal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="debtAmount">Debt Payment</label>
+                        <input type="number" id="debtPayment" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-checkbox">
                     <input type="checkbox" id="recurring">
                     <label for="recurring">Recurring transaction</label>
                 </div>
                 
-                <div id="recurringOptions">
+                <div id="recurringOptions" style="display: none;">
                     <div class="form-group">
                         <label class="form-label" for="frequency">Frequency</label>
                         <select id="frequency" class="form-select">
@@ -1739,6 +1790,47 @@
         </div>
     </div>
     
+    <!-- Debt Modal -->
+    <div id="debtModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Debt</h3>
+                <button class="close-btn" onclick="closeModal('debtModal')">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="debtName">Debt Name</label>
+                    <input type="text" id="debtName" class="form-input" placeholder="Enter debt name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="debtAmount">Total Amount</label>
+                    <input type="number" id="debtAmount" class="form-input" placeholder="0.00" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="debtDueDate">Due Date</label>
+                    <input type="date" id="debtDueDate" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="debtDescription">Description</label>
+                    <textarea id="debtDescription" class="form-input" placeholder="Enter debt description" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="debtPaid">Amount Paid</label>
+                    <input type="number" id="debtPaid" class="form-input" placeholder="0.00" step="0.01" value="0">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-full" onclick="addDebt()">Create Debt</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Contribute Funds Modal -->
     <div id="contributeFundsModal" class="modal">
         <div class="modal-content">
@@ -1770,7 +1862,35 @@
         </div>
     </div>
     
-    <!-- Settings Modal -->
+    
+    <!-- Contribute to Debt Modal (additive; mirrors existing modal styles) -->
+    <div id="contributeDebtModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Contribute to Debt</h3>
+                <button class="close-btn" onclick="closeModal('contributeDebtModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="contributeDebtName">Debt</label>
+                    <input type="text" id="contributeDebtName" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="contributeDebtAmount">Payment Amount</label>
+                    <input type="number" id="contributeDebtAmount" class="form-input" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="contributeDebtNote">Note (optional)</label>
+                    <input type="text" id="contributeDebtNote" class="form-input" placeholder="Enter a note for this payment">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-full" onclick="contributeToDebt()">Add Payment</button>
+            </div>
+        </div>
+    </div>
+
+<!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1793,19 +1913,15 @@
                 
                 <div class="form-group">
                     <label class="form-label" for="dailyLimit">Daily Limit ($/day)</label>
-                    <input type="number" id="dailyLimit" class="form-input daily-limit-input" placeholder="0.00" step="0.01">
-                        <div class="spinner-controls">
-                            <div class="spinner-up" onclick="incrementDailyLimit()">▲</div>
-                            <div class="spinner-down" onclick="decrementDailyLimit()">▼</div>
-                        </div>
+                    <input type="number" id="dailyLimit" class="form-input" placeholder="0.00" step="0.01">
                 </div>
             </div>
             
             <div class="modal-footer">
-                <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn btn-secondary btn-full" onclick="resetDailyLimit()">No daily limit</button>
-                <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Settings</button>
-            </div>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button type="button" class="btn btn-secondary" onclick="resetDailyLimit()">Reset Daily Limit</button>
+                    <button class="btn btn-primary" style="flex: 1;" onclick="saveSettings()">Save Settings</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1822,7 +1938,7 @@
                 <button class="menu-btn" onclick="exportJSON()">📄 Export JSON</button>
                 <button class="menu-btn" onclick="exportCSV()">📊 Export CSV</button>
                 <button class="menu-btn" onclick="document.getElementById('importFile').click()">📥 Import JSON</button>
-                <button class="menu-btn" onclick="showSettings()">⚙️ Settings</button>
+                <button class="menu-btn" onclick="resetAllData()">🔄 Reset</button>
             </div>
             
             <input type="file" id="importFile" class="file-input" accept="application/json" onchange="importJSON(event)">
@@ -1859,6 +1975,8 @@
         let transactions = [];
         let budgets = [];
         let goals = [];
+        let debts = [];
+        let selectedDebtIdForContribution = null;  // added: tracks which debt we're contributing to
         let settings = {
             enableRoundups: false,
             roundupGoal: '',
@@ -1892,6 +2010,12 @@
             
             // Set up recurring checkbox handler
             document.getElementById("recurring").addEventListener("change", toggleRecurringOptions);
+            
+            // Set up savings contribution checkbox handler
+            document.getElementById("contributeSavings").addEventListener("change", toggleSavingsOptions);
+            
+            // Set up debt contribution checkbox handler
+            document.getElementById("contributeDebt").addEventListener("change", toggleDebtOptions);
 
             // Initialize expense legend to be expanded by default
             document.getElementById("expenseLegendGrid").classList.add("expanded");
@@ -1958,6 +2082,18 @@
             expenseCategories.forEach(category => {
                 budgetCategorySelect.innerHTML += `<option value="${category}">${category}</option>`;
             });
+            
+            // Update savings goals dropdown
+            updateSavingsGoalsOptions();
+        }
+
+        function updateSavingsGoalsOptions() {
+            const savingsGoalSelect = document.getElementById('savingsGoal');
+            
+            savingsGoalSelect.innerHTML = '<option value="">Select savings goal</option>';
+            goals.forEach(goal => {
+                savingsGoalSelect.innerHTML += `<option value="${goal.id}">${goal.name}</option>`;
+            });
         }
 
         // Transaction type management
@@ -1966,6 +2102,30 @@
             
             document.getElementById('incomeBtn').classList.toggle('active', type === 'income');
             document.getElementById('expenseBtn').classList.toggle('active', type === 'expense');
+            
+            // Show/hide savings contribution section based on transaction type
+            const savingsCheckbox = document.getElementById('contributeSavings');
+            const savingsSection = savingsCheckbox.closest('.form-checkbox');
+            const savingsOptions = document.getElementById('savingsOptions');
+            
+            // Show/hide debt contribution section based on transaction type
+            const debtCheckbox = document.getElementById('contributeDebt');
+            const debtSection = debtCheckbox.closest('.form-checkbox');
+            const debtOptions = document.getElementById('debtOptions');
+            
+            if (type === 'income') {
+                savingsSection.style.display = 'block';
+                debtSection.style.display = 'block';
+            } else {
+                savingsSection.style.display = 'none';
+                debtSection.style.display = 'none';
+                // Reset savings options when switching to expense
+                savingsCheckbox.checked = false;
+                savingsOptions.style.display = 'none';
+                // Reset debt options when switching to expense
+                debtCheckbox.checked = false;
+                debtOptions.style.display = 'none';
+            }
             
             updateCategoryOptions();
         }
@@ -1985,12 +2145,18 @@
                 document.getElementById('category').value = '';
                 document.getElementById('recurring').checked = false;
                 document.getElementById('recurringOptions').style.display = 'none';
+                document.getElementById('contributeSavings').checked = false;
+                document.getElementById('savingsOptions').style.display = 'none';
+                document.getElementById('savingsGoal').value = '';
+                document.getElementById('savingsAmount').value = '';
                 setType('expense');
             }
         }
 
         function showTransactionModal() {
             showModal('transactionModal');
+            // Initialize the modal with expense type (default) and hide savings section
+            setType('expense');
         }
 
         function showBudgetModal() {
@@ -2001,10 +2167,43 @@
             showModal('goalModal');
         }
 
-        function showSettings() {
-            closeModal('menuModal');
-            updateGoalOptions();
-            showModal('settingsModal');
+        function resetAllData() {
+            // Show confirmation using alert first, then proceed
+            const userConfirmed = window.confirm('Are you sure you want to reset all data? This will permanently delete all transactions, goals, budgets, and settings. This action cannot be undone.');
+            
+            if (userConfirmed) {
+                // Clear all localStorage data
+                localStorage.removeItem('transactions');
+                localStorage.removeItem('goals');
+                localStorage.removeItem('budgets');
+                localStorage.removeItem('settings');
+                
+                // Reset all global variables to default state
+                transactions = [];
+                goals = [];
+                debts = [];
+                budgets = [];
+                settings = {
+                    enableRoundups: false,
+                    roundupGoal: '',
+                    dailyLimit: 0
+                };
+                
+                // Update all displays
+                updateTransactionsList();
+                updateGoalsList();
+                updateBudgetsList();
+                updateDashboard();
+                updateBalanceCard();
+                updateQuickStats();
+                updateCategoryOptions();
+                
+                // Close menu modal
+                closeModal('menuModal');
+                
+                // Show confirmation
+                showNotification('All data has been reset to default state');
+            }
         }
 
         function showMenu() {
@@ -2056,6 +2255,38 @@
             };
             
             transactions.unshift(transaction);
+            
+            // Handle savings contributions
+            if (currentTransactionType === 'income') {
+                const contributeSavings = document.getElementById('contributeSavings').checked;
+                if (contributeSavings) {
+                    const savingsGoalId = document.getElementById('savingsGoal').value;
+                    const savingsAmount = parseFloat(document.getElementById('savingsAmount').value);
+                    
+                    if (savingsGoalId && savingsAmount > 0) {
+                        const goal = goals.find(g => g.id == savingsGoalId);
+                        if (goal) {
+                            goal.current = Math.min(goal.current + savingsAmount, goal.target);
+                            showNotification(`Added $${savingsAmount.toFixed(2)} to ${goal.name}`);
+                        }
+                    }
+                }
+                
+                // Handle debt contributions
+                const contributeDebt = document.getElementById('contributeDebt').checked;
+                if (contributeDebt) {
+                    const debtGoalId = document.getElementById('debtGoal').value;
+                    const debtPayment = parseFloat(document.getElementById('debtPayment').value);
+                    
+                    if (debtGoalId && debtPayment > 0) {
+                        const debt = debts.find(d => d.id == debtGoalId);
+                        if (debt) {
+                            debt.paid = Math.min(debt.paid + debtPayment, debt.amount);
+                            showNotification(`Added $${debtPayment.toFixed(2)} payment to ${debt.name}`);
+                        }
+                    }
+                }
+            }
             
             // Handle roundups
             if (settings.enableRoundups && currentTransactionType === 'expense' && settings.roundupGoal) {
@@ -2161,6 +2392,77 @@
             }
         }
 
+        // Debt management
+        function showDebtModal() {
+            document.getElementById('debtName').value = '';
+            document.getElementById('debtAmount').value = '';
+            document.getElementById('debtDueDate').value = '';
+            document.getElementById('debtDescription').value = '';
+            document.getElementById('debtPaid').value = '0';
+            showModal('debtModal');
+        }
+
+        function addDebt() {
+            const name = document.getElementById('debtName').value.trim();
+            const amount = parseFloat(document.getElementById('debtAmount').value);
+            const dueDate = document.getElementById('debtDueDate').value;
+            const description = document.getElementById('debtDescription').value.trim();
+            const paid = parseFloat(document.getElementById('debtPaid').value) || 0;
+
+            if (!name || !amount || amount <= 0) {
+                showNotification('Please enter valid debt details', 'error');
+                return;
+            }
+
+            const debt = {
+                id: Date.now(),
+                name: name,
+                amount: amount,
+                dueDate: dueDate,
+                description: description,
+                paid: Math.min(paid, amount)
+            };
+
+            debts.push(debt);
+            saveData();
+            updateDebtsList();
+            closeModal('debtModal');
+            showNotification('Debt added successfully');
+        }
+
+        function deleteDebt(id) {
+            if (true) {
+                debts = debts.filter(d => d.id !== id);
+                saveData();
+                updateDebtsList();
+                showNotification('Debt deleted');
+            }
+        }
+
+        function updateDebtProgress(id, amount) {
+            const debt = debts.find(d => d.id === id);
+            if (debt) {
+                const wasCompleted = debt.paid >= debt.amount;
+                debt.paid = Math.min(debt.paid + amount, debt.amount);
+                const isNowCompleted = debt.paid >= debt.amount;
+                
+                saveData();
+                updateDashboard();
+                
+                // Trigger confetti if debt was just completed
+                if (!wasCompleted && isNowCompleted) {
+                    setTimeout(() => {
+                        if (typeof Confetti !== 'undefined') {
+                            Confetti.burst(48);
+                        }
+                    }, 100);
+                    showNotification('🎉 Debt paid off! Congratulations!');
+                } else {
+                    showNotification('Debt payment recorded');
+                }
+            }
+        }
+
         // Settings management
 function saveSettings() {
             settings.enableRoundups = document.getElementById('enableRoundups').checked;
@@ -2174,25 +2476,27 @@ function saveSettings() {
         }
 
         function resetDailyLimit() {
+            // Reset all form fields to default state
+            document.getElementById('enableRoundups').checked = false;
+            document.getElementById('roundupGoal').value = '';
+            document.getElementById('dailyLimit').value = '';
+            
+            // Reset settings object
+            settings.dailyLimit = 0;
+            settings.enableRoundups = false;
+            settings.roundupGoal = '';
+            
+            // Remove from localStorage
             localStorage.removeItem("dailyLimit");
-            document.getElementById("dailyLimit").value = "";
+            localStorage.removeItem("enableRoundups");
+            localStorage.removeItem("roundupGoal");
+            
+            // Update the card display to show default state
             updateDailyLimit();
             closeModal("settingsModal");
         }
         
-        function incrementDailyLimit() {
-            const input = document.getElementById('dailyLimit');
-            const currentValue = parseFloat(input.value) || 0;
-            const newValue = (currentValue + 0.01).toFixed(2);
-            input.value = newValue;
-        }
-        
-        function decrementDailyLimit() {
-            const input = document.getElementById('dailyLimit');
-            const currentValue = parseFloat(input.value) || 0;
-            const newValue = Math.max(0, currentValue - 0.01).toFixed(2);
-            input.value = newValue;
-        }
+
 
         function updateGoalOptions() {
             const roundupGoalSelect = document.getElementById('roundupGoal');
@@ -2214,8 +2518,18 @@ function saveSettings() {
             updateTransactionsList();
             updateBudgetsList();
             updateGoalsList();
+            updateDebtsList();
             updateCharts();
-        }
+        
+            // Sync goals mini progress bar to the displayed percent
+            (function(){
+                var el = document.getElementById('goalsProgressValue');
+                if (el) {
+                    var m = el.textContent.match(/(\d+)%/);
+                    if (m) updateGoalsProgressBar(parseInt(m[1],10));
+                }
+            })();
+}
 
         function updateBalanceCard() {
             const totalIncome = transactions
@@ -2286,7 +2600,7 @@ function saveSettings() {
                     dailyLimitProgressBar.style.background = 'var(--primary)';
                 }
             } else {
-                dailyLimitValue.textContent = 'Set limit';
+                dailyLimitValue.textContent = 'Set Daily Limit';
                 dailyLimitProgress.style.display = 'none';
             }
         }
@@ -2403,6 +2717,54 @@ function saveSettings() {
             }).join('');
             
             updateBudgetDropdown();
+        }
+
+        function updateDebtsList() {
+            const container = document.getElementById('debtsList');
+            
+            if (debts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💳</div>
+                        <div class="empty-state-text">No debts set</div>
+                        <div class="empty-state-subtext">Add debts to track your payoff progress</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = debts.map(debt => {
+                const percentage = (debt.paid / debt.amount) * 100;
+                const isCompleted = percentage >= 100;
+                const remaining = debt.amount - debt.paid;
+                const dueDate = debt.dueDate ? new Date(debt.dueDate).toLocaleDateString() : 'No due date';
+                
+                return `
+                    <div class="savings-card goal-item slide-in" data-debt-id="debt-${debt.id}">
+                        <div class="goal-left">
+                            <div class="goal-icon" style="background: ${getIconBackground(debt.name)}">
+                                💳
+                            </div>
+                            <div class="goal-info">
+                                <div class="goal-header">
+                                    <div class="goal-name">${debt.name}${isCompleted ? '<span class="achievement-badge">Paid Off!</span>' : ''}</div>
+                                </div>
+                                <div class="goal-meta">${formatCurrency(debt.paid)} of ${formatCurrency(debt.amount)}</div>
+                            </div>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar">
+                                <div class="progress-fill" style="width: ${Math.min(percentage, 100)}%; background: ${isCompleted ? 'var(--success)' : 'var(--primary)'}"></div>
+                            </div>
+                            <div class="goal-percentage">${Math.round(percentage)}%</div>
+                        </div>
+                        <div class="goal-amount">
+                            <button class="add-savings-btn btn" style="background: var(--success); color: white; padding: 4px 8px; font-size: 12px; margin-right: 8px;" onclick="showContributeDebtModal(${debt.id})" >+ Add</button>
+                            <button class="delete-btn" onclick="deleteDebt(${debt.id})">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateGoalsList() {
@@ -2654,10 +3016,33 @@ function saveSettings() {
             updateMonthlyChart();
         }
 
+        // Stable color mapping function to ensure consistent colors across updates
+        function getStableColor(category, index) {
+            const colors = ['#00FF88', '#FF4757', '#FFA726', '#00D4FF', '#FF6B9D', '#C44569', '#7ED321', '#FF9500', 
+                           '#42A5F5', '#AB47BC', '#66BB6A', '#FF7043', '#FFCA28', '#8BC34A', '#FF5722', '#9C27B0'];
+            
+            // Use category name hash for stable color assignment
+            let hash = 0;
+            for (let i = 0; i < category.length; i++) {
+                const char = category.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            
+            // Fallback to index if hash fails, ensure we stay within color array bounds
+            const colorIndex = Math.abs(hash) % colors.length;
+            return colors[colorIndex] || colors[index % colors.length];
+        }
+
         function updateExpenseChart() {
             const expensesByCategory = getExpensesByCategory();
-            const categories = Object.keys(expensesByCategory);
-            const amounts = Object.values(expensesByCategory);
+            
+            // Sort categories by amount descending to maintain consistent ordering
+            const sortedEntries = Object.entries(expensesByCategory)
+                .sort(([,a], [,b]) => b - a);
+            
+            const categories = sortedEntries.map(([category]) => category);
+            const amounts = sortedEntries.map(([,amount]) => amount);
             
             if (categories.length === 0) {
                 // Show default data instead of empty state
@@ -2666,12 +3051,15 @@ function saveSettings() {
                 charts.expense.data.datasets[0].backgroundColor = ['#00FF88', '#FF4757', '#FFA726'];
                 updateExpenseLegend(['Food & Dining', 'Transportation', 'Shopping']);
             } else {
+                // Generate colors for all categories using stable color mapping
+                const backgroundColor = categories.map((category, index) => getStableColor(category, index));
+                
                 charts.expense.data.labels = categories;
                 charts.expense.data.datasets[0].data = amounts;
-                charts.expense.data.datasets[0].backgroundColor = [
-                    '#00FF88', '#FF4757', '#FFA726', '#00D4FF', '#FF6B9D', '#C44569', '#7ED321', '#FF9500'
-                ];
-                updateExpenseLegend(categories.slice(0, 3)); // Show top 3 categories
+                charts.expense.data.datasets[0].backgroundColor = backgroundColor;
+                
+                // Update legend with all categories
+                updateExpenseLegend(categories);
             }
             
             charts.expense.update();
@@ -2715,18 +3103,45 @@ function saveSettings() {
             charts.budgetDonut.update();
         }
 
-        function updateExpenseLegend(categories) {
-            const legendContainer = document.getElementById('expenseLegend');
-            const colors = ['#00FF88', '#FF4757', '#FFA726', '#00D4FF', '#FF6B9D', '#C44569', '#7ED321', '#FF9500'];
+        function updateExpenseLegend(categories, amounts) {
+            const legendGrid = document.getElementById('expenseLegendGrid');
             
-            if (!legendContainer) return;
+            if (!legendGrid) return;
             
-            legendContainer.innerHTML = categories.map((category, index) => `
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: ${colors[index % colors.length]}"></div>
-                    <span>${category}</span>
-                </div>
-            `).join('');
+            // Build legend items from the exact same data used by the chart
+            const legendHTML = categories.map((category, index) => {
+                const color = getStableColor(category, index);
+                
+                return `
+                    <div class="legend-item legend-visible">
+                        <div class="legend-dot" style="background-color: ${color};"></div>
+                        <span>${category}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            legendGrid.innerHTML = legendHTML;
+            
+            // Reset expansion state and update visibility based on current state
+            const isExpanded = legendGrid.classList.contains('expanded');
+            const allLegendItems = legendGrid.querySelectorAll('.legend-item');
+            const visibleItemsCount = 6; // Number of items initially visible when collapsed
+            
+            if (!isExpanded && allLegendItems.length > visibleItemsCount) {
+                // Hide items beyond the visible count when collapsed
+                allLegendItems.forEach((item, index) => {
+                    if (index >= visibleItemsCount) {
+                        item.classList.remove('legend-visible');
+                        item.classList.add('legend-hidden');
+                    }
+                });
+            }
+            
+            // Update expand button visibility
+            const expandBtn = document.getElementById('expenseLegendExpandBtn');
+            if (expandBtn) {
+                expandBtn.style.display = allLegendItems.length > visibleItemsCount ? 'flex' : 'none';
+            }
         }
 
         function updateBudgetLegend(labels) {
@@ -2750,20 +3165,26 @@ function saveSettings() {
             if (!charts.dashboard) return;
             
             const expensesByCategory = getExpensesByCategory();
-            const categories = Object.keys(expensesByCategory);
-            const amounts = Object.values(expensesByCategory);
+            
+            // Sort categories by amount descending for consistency with expense chart
+            const sortedEntries = Object.entries(expensesByCategory)
+                .sort(([,a], [,b]) => b - a);
+            
+            const categories = sortedEntries.map(([category]) => category);
+            const amounts = sortedEntries.map(([,amount]) => amount);
             
             if (categories.length === 0) {
                 // Show empty state or hide chart
                 charts.dashboard.data.labels = [];
                 charts.dashboard.data.datasets[0].data = [];
+                charts.dashboard.data.datasets[0].backgroundColor = [];
             } else {
+                // Use the same stable color mapping as the expense chart
+                const backgroundColor = categories.map((category, index) => getStableColor(category, index));
+                
                 charts.dashboard.data.labels = categories;
                 charts.dashboard.data.datasets[0].data = amounts;
-                charts.dashboard.data.datasets[0].backgroundColor = [
-                    '#00FF88', '#FF4757', '#FFA726', '#00D4FF',
-                    '#FF6B9D', '#C44569', '#7ED321', '#FF9500'
-                ];
+                charts.dashboard.data.datasets[0].backgroundColor = backgroundColor;
             }
             
             charts.dashboard.update();
@@ -2891,20 +3312,61 @@ function saveSettings() {
             recurringOptions.style.display = isChecked ? 'block' : 'none';
         }
 
+        function toggleSavingsOptions() {
+            const savingsOptions = document.getElementById('savingsOptions');
+            const isChecked = document.getElementById('contributeSavings').checked;
+            savingsOptions.style.display = isChecked ? 'block' : 'none';
+            
+            if (isChecked) {
+                updateSavingsGoalOptions();
+            }
+        }
+
+        function updateSavingsGoalOptions() {
+            const savingsGoalSelect = document.getElementById('savingsGoal');
+            savingsGoalSelect.innerHTML = '<option value="">Select savings goal</option>';
+            
+            goals.forEach(goal => {
+                if (goal.current < goal.target) { // Only show incomplete goals
+                    savingsGoalSelect.innerHTML += `<option value="${goal.id}">${goal.name}</option>`;
+                }
+            });
+        }
+
+        function toggleDebtOptions() {
+            const debtOptions = document.getElementById('debtOptions');
+            const isChecked = document.getElementById('contributeDebt').checked;
+            debtOptions.style.display = isChecked ? 'block' : 'none';
+            
+            if (isChecked) {
+                updateDebtGoalOptions();
+            }
+        }
+
+        function updateDebtGoalOptions() {
+            const debtGoalSelect = document.getElementById('debtGoal');
+            debtGoalSelect.innerHTML = '<option value="">Select debt goal</option>';
+            
+            debts.forEach(debt => {
+                if (debt.paid < debt.amount) { // Only show unpaid debts
+                    debtGoalSelect.innerHTML += `<option value="${debt.id}">${debt.name}</option>`;
+                }
+            });
+        }
+
         function toggleExpenseLegend() {
-            const hiddenItems = document.querySelectorAll('#expenseLegendGrid .legend-hidden');
             const expandBtn = document.getElementById('expenseLegendExpandBtn');
             const expandText = document.getElementById('expenseLegendExpandText');
             const expandIcon = document.getElementById('expenseLegendExpandIcon');
             
             const legendGrid = document.getElementById('expenseLegendGrid');
             const allLegendItems = legendGrid.querySelectorAll('.legend-item');
-            const visibleItemsCount = 6; // Number of items initially visible
+            const visibleItemsCount = 6; // Number of items initially visible when collapsed
             
             const isExpanded = legendGrid.classList.contains('expanded');
 
             if (isExpanded) {
-                // Currently expanded, so collapse
+                // Currently expanded, so collapse - show only first 6 items
                 allLegendItems.forEach((item, index) => {
                     if (index >= visibleItemsCount) {
                         item.classList.remove('legend-visible');
@@ -2915,7 +3377,7 @@ function saveSettings() {
                 expandText.textContent = 'Show More';
                 expandIcon.classList.remove('rotated');
             } else {
-                // Currently collapsed, so expand
+                // Currently collapsed, so expand - show ALL items (no limits)
                 allLegendItems.forEach(item => {
                     item.classList.remove('legend-hidden');
                     item.classList.add('legend-visible');
@@ -2924,10 +3386,6 @@ function saveSettings() {
                 expandText.textContent = 'Show Less';
                 expandIcon.classList.add('rotated');
             }
-            
-
-            
-
         }
 
         let selectedBudgetFilter = 'all';
@@ -3011,11 +3469,61 @@ function saveSettings() {
         }
 
         // Data persistence
-        function saveData() {
+        
+        // Open contribute-to-debt modal for a specific debt
+        function showContributeDebtModal(id) {
+            const debt = debts.find(d => d.id === id);
+            if (!debt) return;
+            selectedDebtIdForContribution = id;
+            document.getElementById('contributeDebtName').value = debt.name;
+            document.getElementById('contributeDebtAmount').value = '';
+            document.getElementById('contributeDebtNote').value = '';
+            showModal('contributeDebtModal');
+        }
+
+        // Apply a payment to the selected debt
+        function contributeToDebt() {
+            if (selectedDebtIdForContribution === null) return;
+            const amount = parseFloat(document.getElementById('contributeDebtAmount').value);
+            if (isNaN(amount) || amount <= 0) {
+                showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+            const debt = debts.find(d => d.id === selectedDebtIdForContribution);
+            if (!debt) return;
+            const remaining = Math.max(0, debt.amount - debt.paid);
+            const payment = Math.min(amount, remaining);
+            debt.paid = (debt.paid || 0) + payment;
+
+            // Optional: log a transaction (keeps existing Transactions UI intact)
+            transactions.push({
+                id: Date.now(),
+                type: 'debtPayment',
+                category: debt.name,
+                amount: payment,
+                date: new Date().toISOString().slice(0,10),
+                note: document.getElementById('contributeDebtNote').value || 'Debt payment'
+            });
+
+            saveData();
+            updateDebtsList();
+            updateTransactionsList && updateTransactionsList();
+            updateDashboard && updateDashboard();
+
+            closeModal('contributeDebtModal');
+            showNotification('Payment added');
+        }
+        function updateGoalsProgressBar(pct) {
+            const bar = document.getElementById('goalsProgressBar');
+            if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        }
+
+function saveData() {
             localStorage.setItem('budgetTracker', JSON.stringify({
                 transactions,
                 budgets,
                 goals,
+                debts,
                 settings
             }));
         }
@@ -3027,6 +3535,7 @@ function saveSettings() {
                 transactions = parsed.transactions || [];
                 budgets = parsed.budgets || [];
                 goals = parsed.goals || [];
+                debts = parsed.debts || [];
                 settings = { ...settings, ...parsed.settings };
             }
         }
@@ -3328,8 +3837,3 @@ function saveSettings() {
     </script>
 </body>
 </html>
-
-
-
-
-
