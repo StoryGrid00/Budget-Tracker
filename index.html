@@ -1062,6 +1062,16 @@
             background: var(--gray-200);
             border-color: var(--gray-300);
         }
+        [data-theme="dark"] .search-input {
+    background: var(--gray-200);
+    border-color: var(--gray-300);
+    color: white; /* ✅ Makes text white in dark mode */
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: #cbd5e1; /* ✅ Softer white for placeholder text */
+}
+
         
         .search-icon {
             position: absolute;
