@@ -1383,6 +1383,26 @@
   });
 </script>
 
+
+<style id="dropdown-color-fix">
+/* Force Budget dropdown text to remain white in all themes */
+.budget-dropdown-btn,
+.budget-dropdown-item {
+  color: #ffffff !important; /* Always white */
+}
+
+/* Optional: darker menu background for visibility */
+.budget-dropdown-menu {
+  background: rgba(30, 41, 59, 0.95) !important; /* slate-800 tone */
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.budget-dropdown-item.active {
+  color: #a5b4fc !important; /* light indigo for active item */
+  background: rgba(99, 102, 241, 0.12) !important;
+}
+</style>
+
 </head>
 <body>
     <div class="container">
