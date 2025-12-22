@@ -55,9 +55,9 @@
         }
         
         :root {
-            --primary: #10B981;
+            --primary: #059669;
             --primary-light: #10B981;
-            --primary-dark: #10B981;
+            --primary-dark: #047857;
             --primary-gradient: linear-gradient(135deg, #10B981 0%, #34D399 100%);
             --success: #10B981;
             --danger: #EF4444;
@@ -210,21 +210,40 @@
             width: 100%;
         }
         
+        .balance-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .balance-main {
+            flex: 0 0 auto;
+        }
+        
         .balance-amount {
             font-size: 32px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             color: #FFFFFF;
         }
         
         .balance-label {
             opacity: 0.9;
             font-size: 14px;
-            margin-bottom: 24px;
+            margin-bottom: 0px;
             color: #FFFFFF;
         }
         
         .balance-details {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        
+        .balance-details-vertical {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
@@ -290,8 +309,8 @@
         }
         
         .chart-canvas {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             flex-shrink: 0;
         }
         
@@ -308,7 +327,27 @@
             flex: 1;
             align-items: flex-start;
             min-width: 0;
-            overflow: hidden;
+            max-height: 180px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
+        }
+        
+        .chart-legend-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .chart-legend-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .chart-legend-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 2px;
+        }
+        
+        .chart-legend-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
         }
         
         .legend-grid {
@@ -355,21 +394,23 @@
         
         .legend-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 6px;
             font-size: 11px;
             color: rgba(0, 0, 0, 0.8);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             transition: opacity 0.3s ease;
             min-width: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+            padding: 2px 0;
         }
         
         .legend-item span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            flex: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
             min-width: 0;
         }
         
@@ -608,6 +649,10 @@
         
         [data-theme="dark"] .card {
             background: var(--gray-200);
+        }
+        
+        [data-theme="dark"] .balance-card {
+            background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
         }
         
         .card-header {
@@ -1591,7 +1636,7 @@
             border-radius: 12px;
             font-size: 10px;
             margin-left: 8px;
-            white-space: nowrap;
+            white-space: normal;
             display: inline-block;
         }
         
@@ -1760,16 +1805,20 @@
             <div class="balance-content">
                 <!-- Balance Info Section -->
                 <div class="balance-info">
-                    <div class="balance-amount" id="balance">$0.00</div>
-                    <div class="balance-label">Current Balance</div>
-                    <div class="balance-details">
-                        <div class="balance-item">
-                            <div class="balance-item-amount" id="totalIncome">$0.00</div>
-                            <div class="balance-item-label">Income</div>
+                    <div class="balance-header-row">
+                        <div class="balance-main">
+                            <div class="balance-amount" id="balance">$0.00</div>
+                            <div class="balance-label">Current Balance</div>
                         </div>
-                        <div class="balance-item">
-                            <div class="balance-item-amount" id="totalExpenses">$0.00</div>
-                            <div class="balance-item-label">Expenses</div>
+                        <div class="balance-details">
+                            <div class="balance-item">
+                                <div class="balance-item-amount" id="totalIncome">$0.00</div>
+                                <div class="balance-item-label">Income</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-item-amount" id="totalExpenses">$0.00</div>
+                                <div class="balance-item-label">Expenses</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1849,14 +1898,7 @@
                                 <canvas id="budgetChart"></canvas>
                             </div>
                             <div class="chart-legend-container" id="budgetLegend">
-                                <div class="legend-item">
-                                    <div class="legend-dot" style="background-color: #9333EA;"></div>
-                                    <span>Used - $30.00</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-dot" style="background-color: #E5E7EB;"></div>
-                                    <span>Remaining - $70.00</span>
-                                </div>
+                                <!-- Budget legend items will be dynamically generated -->
                             </div>
                         </div>
                     </div>
@@ -2390,6 +2432,15 @@
             document.getElementById("expenseLegendGrid").classList.add("expanded");
             document.getElementById("expenseLegendExpandText").textContent = "Show Less";
             document.getElementById("expenseLegendExpandIcon").classList.add("rotated");
+            
+            // Process recurring transactions on load
+            processRecurringTransactions();
+            
+            // Check for upcoming recurring transactions
+            checkUpcomingRecurring();
+            
+            // Set up periodic check for recurring transactions (every hour)
+            setInterval(processRecurringTransactions, 3600000);
         });
 
         // Logo management
@@ -2546,6 +2597,13 @@
                 localStorage.removeItem('goals');
                 localStorage.removeItem('budgets');
                 localStorage.removeItem('settings');
+                localStorage.removeItem('budgetTracker');
+                // Clear any goal celebration flags
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('goal-celebrated-')) {
+                        localStorage.removeItem(key);
+                    }
+                });
                 
                 // Reset all global variables to default state
                 transactions = [];
@@ -2556,7 +2614,16 @@
                     dailyLimit: 0
                 };
                 
-                // Update all displays
+                // Reset dismissed assistants
+                if (typeof dismissedAssistants !== 'undefined') {
+                    dismissedAssistants = [];
+                }
+                
+                // Update all displays to show zero values
+                document.getElementById('balance').textContent = '$0.00';
+                document.getElementById('totalIncome').textContent = '$0.00';
+                document.getElementById('totalExpenses').textContent = '$0.00';
+                
                 updateTransactionsList();
                 updateGoalsList();
                 updateBudgetsList();
@@ -2565,11 +2632,16 @@
                 updateQuickStats();
                 updateCategoryOptions();
                 
+                // Hide any assistant banners
+                if (typeof hideAssistant === 'function') {
+                    hideAssistant();
+                }
+                
                 // Close menu modal
                 closeModal('menuModal');
                 
                 // Show confirmation
-                showNotification('All data has been reset to default state');
+                showNotification('All data has been reset to zero');
             }
         }
 
@@ -2595,6 +2667,11 @@
                 content.classList.remove('active');
             });
             document.getElementById(tabName).classList.add('active');
+            
+            // Initialize insights navigation when switching to insights tab
+            if (tabName === 'insights') {
+                updateInsightsNavigation();
+            }
         }
 
         // Transaction management
@@ -2610,15 +2687,18 @@
                 return;
             }
             
+            const now = new Date();
             const transaction = {
                 id: Date.now(),
                 description,
                 amount: currentTransactionType === 'expense' ? -Math.abs(amount) : Math.abs(amount),
                 category,
                 type: currentTransactionType,
-                date: new Date().toISOString(),
+                date: now.toISOString(),
                 isRecurring,
-                frequency: isRecurring ? frequency : null
+                frequency: isRecurring ? frequency : null,
+                lastProcessed: isRecurring ? now.toISOString() : null,
+                nextDueDate: isRecurring ? calculateNextDueDate(now, frequency) : null
             };
             
             transactions.unshift(transaction);
@@ -3033,6 +3113,9 @@ function saveSettings() {
                                     ${formatCurrency(budget.spent)} of ${formatCurrency(budget.amount)}
                                     ${isOverBudget ? '<span class="over-budget-pill">Over Budget</span>' : ''}
                                 </div>
+                                <div class="budget-remaining" style="font-size: 12px; color: ${isOverBudget ? 'var(--danger)' : 'var(--text-secondary)'}; margin-top: 2px;">
+                                    ${isOverBudget ? 'Over by ' : 'Remaining: '}${formatCurrency(Math.abs(budget.amount - budget.spent))}
+                                </div>
                             </div>
                         </div>
                         <div class="budget-progress">
@@ -3082,6 +3165,9 @@ function saveSettings() {
                                     <div class="goal-name">${debt.name}${isCompleted ? '<span class="achievement-badge">Paid Off!</span>' : ''}</div>
                                 </div>
                                 <div class="goal-meta">${formatCurrency(debt.paid)} of ${formatCurrency(debt.amount)}</div>
+                                <div class="goal-remaining" style="font-size: 12px; color: ${isCompleted ? 'var(--success)' : 'var(--text-secondary)'}; margin-top: 2px;">
+                                    ${isCompleted ? 'Debt paid off!' : 'Remaining: ' + formatCurrency(remaining)}
+                                </div>
                             </div>
                         </div>
                         <div class="goal-progress">
@@ -3128,6 +3214,9 @@ function saveSettings() {
                                     <div class="goal-name">${goal.name}${isCompleted ? '<span class="achievement-badge">Achieved!</span>' : ''}</div>
                                 </div>
                                 <div class="goal-meta">${formatCurrency(goal.current)} of ${formatCurrency(goal.target)}</div>
+                                <div class="goal-remaining" style="font-size: 12px; color: ${isCompleted ? 'var(--success)' : 'var(--text-secondary)'}; margin-top: 2px;">
+                                    ${isCompleted ? 'Goal achieved!' : 'Remaining: ' + formatCurrency(goal.target - goal.current)}
+                                </div>
                             </div>
                         </div>
                         <div class="goal-progress">
@@ -3202,7 +3291,30 @@ function saveSettings() {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            position: 'nearest',
+                            yAlign: 'bottom',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#10B981',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        return label + ': ' + formatCurrency(value);
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true
                         }
                     }
                 });
@@ -3227,7 +3339,30 @@ function saveSettings() {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                position: 'nearest',
+                                yAlign: 'bottom',
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#10B981',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        return label + ': ' + formatCurrency(value);
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true
                         }
                     }
                 });
@@ -3352,11 +3487,11 @@ function saveSettings() {
             const amounts = sortedEntries.map(([,amount]) => amount);
             
             if (categories.length === 0) {
-                // Show default data instead of empty state
-                charts.expense.data.labels = ['Food & Dining', 'Transportation', 'Shopping'];
-                charts.expense.data.datasets[0].data = [40, 30, 30];
-                charts.expense.data.datasets[0].backgroundColor = ['#9333EA', '#FF4757', '#FFA726'];
-                updateExpenseLegend(['Food & Dining', 'Transportation', 'Shopping'], [40, 30, 30]);
+                // Show placeholder donut chart
+                charts.expense.data.labels = ['No Expenses'];
+                charts.expense.data.datasets[0].data = [1];
+                charts.expense.data.datasets[0].backgroundColor = ['#E5E7EB'];
+                updateExpenseLegend(['No expenses yet'], [0]);
             } else {
                 // Generate colors for all categories using stable color mapping
                 const backgroundColor = categories.map((category, index) => getStableColor(category, index));
@@ -3400,11 +3535,11 @@ function saveSettings() {
                 ];
                 updateBudgetLegend(['Used', 'Remaining'], [totalSpent, remaining]);
             } else {
-                // Show default data instead of empty state
-                charts.budgetDonut.data.labels = ['Used', 'Remaining'];
-                charts.budgetDonut.data.datasets[0].data = [30, 70];
-                charts.budgetDonut.data.datasets[0].backgroundColor = ['#9333EA', '#E5E7EB'];
-                updateBudgetLegend(['Used', 'Remaining'], [30, 70]);
+                // Show placeholder donut chart
+                charts.budgetDonut.data.labels = ['No Budget'];
+                charts.budgetDonut.data.datasets[0].data = [1];
+                charts.budgetDonut.data.datasets[0].backgroundColor = ['#E5E7EB'];
+                updateBudgetLegend(['No budget set'], [0]);
             }
             
             charts.budgetDonut.update();
@@ -3606,6 +3741,29 @@ function saveSettings() {
             }
             
             updateInsightsChart();
+            updateInsightsNavigation();
+        }
+        
+        function updateInsightsNavigation() {
+            const now = new Date();
+            const isCurrentMonth = currentInsightsMonth.getMonth() === now.getMonth() && 
+                                   currentInsightsMonth.getFullYear() === now.getFullYear();
+            
+            // Update label
+            const navLabel = document.getElementById('insightsNavLabel');
+            if (isCurrentMonth) {
+                navLabel.textContent = 'Last 6 Months';
+            } else {
+                const monthName = currentInsightsMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                navLabel.textContent = monthName;
+            }
+            
+            // Update button states
+            const nextBtn = document.getElementById('insightsNextBtn');
+            nextBtn.disabled = isCurrentMonth;
+            
+            // Optionally disable prev button if no earlier data exists
+            // For now, allow unlimited backward navigation
         }
         
         function getMonthlySpendingData() {
@@ -3741,6 +3899,103 @@ function saveSettings() {
             const recurringOptions = document.getElementById('recurringOptions');
             const isChecked = document.getElementById('recurring').checked;
             recurringOptions.style.display = isChecked ? 'block' : 'none';
+        }
+
+        // Recurring Transaction Processing
+        function calculateNextDueDate(currentDate, frequency) {
+            const date = new Date(currentDate);
+            
+            switch(frequency) {
+                case 'weekly':
+                    date.setDate(date.getDate() + 7);
+                    break;
+                case 'bi-weekly':
+                    date.setDate(date.getDate() + 14);
+                    break;
+                case 'monthly':
+                    date.setMonth(date.getMonth() + 1);
+                    break;
+                case 'yearly':
+                    date.setFullYear(date.getFullYear() + 1);
+                    break;
+            }
+            
+            return date.toISOString();
+        }
+
+        function processRecurringTransactions() {
+            const now = new Date();
+            let processedCount = 0;
+            
+            transactions.forEach(transaction => {
+                if (transaction.isRecurring && transaction.nextDueDate) {
+                    const dueDate = new Date(transaction.nextDueDate);
+                    
+                    // Check if the transaction is due
+                    if (dueDate <= now) {
+                        // Create a new transaction instance
+                        const newTransaction = {
+                            id: Date.now() + processedCount, // Ensure unique ID
+                            description: transaction.description,
+                            amount: transaction.amount,
+                            category: transaction.category,
+                            type: transaction.type,
+                            date: now.toISOString(),
+                            isRecurring: false, // The instance itself is not recurring
+                            frequency: null,
+                            parentRecurringId: transaction.id // Link to parent
+                        };
+                        
+                        transactions.unshift(newTransaction);
+                        
+                        // Update the recurring transaction's next due date
+                        transaction.lastProcessed = now.toISOString();
+                        transaction.nextDueDate = calculateNextDueDate(now, transaction.frequency);
+                        
+                        // Show notification
+                        const amountStr = formatCurrency(Math.abs(transaction.amount));
+                        const icon = transaction.type === 'income' ? '💰' : '💳';
+                        const typeLabel = transaction.type === 'income' ? 'Income' : 'Expense';
+                        showNotification(
+                            `🔄 ${icon} Recurring ${typeLabel}: ${transaction.description} - ${amountStr}`,
+                            transaction.type === 'income' ? 'success' : 'info'
+                        );
+                        
+                        processedCount++;
+                    }
+                }
+            });
+            
+            if (processedCount > 0) {
+                saveData();
+                updateDashboard();
+            }
+            
+            return processedCount;
+        }
+
+        function checkUpcomingRecurring() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            transactions.forEach(transaction => {
+                if (transaction.isRecurring && transaction.nextDueDate) {
+                    const dueDate = new Date(transaction.nextDueDate);
+                    
+                    // Check if due tomorrow
+                    if (dueDate.toDateString() === tomorrow.toDateString()) {
+                        const amountStr = formatCurrency(Math.abs(transaction.amount));
+                        const icon = transaction.type === 'income' ? '💰' : '💳';
+                        const typeLabel = transaction.type === 'income' ? 'Income' : 'Expense';
+                        
+                        showNotification(
+                            `⏰ Upcoming ${typeLabel}: ${transaction.description} - ${amountStr} (Tomorrow)`,
+                            'info'
+                        );
+                    }
+                }
+            });
         }
 
         function toggleSavingsOptions() {
@@ -3883,6 +4138,8 @@ function saveSettings() {
             
             if (type === 'error') {
                 notification.style.background = 'var(--danger)';
+            } else if (type === 'info') {
+                notification.style.background = 'var(--info)';
             }
             
             document.body.appendChild(notification);
@@ -4598,52 +4855,81 @@ function saveData() {
             };
         })();
         
-        // Financial Assistant Functions
+        // Enhanced Financial Assistant Functions with comprehensive scenarios
         let dismissedAssistants = [];
-        
+
         function checkFinancialAssistant() {
             const totalIncome = transactions
                 .filter(t => t.type === 'income')
                 .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            
+    
             const totalExpenses = transactions
                 .filter(t => t.type === 'expense')
                 .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            
+    
             const balance = totalIncome - totalExpenses;
-            
-            // Priority 1: Negative balance warning
+    
+            // Priority 1: Negative balance warnings (tiered by severity)
             if (balance < 0 && !dismissedAssistants.includes('negative-balance')) {
-                showAssistant(
-                    '⚠️',
-                    'Negative Balance Alert',
-                    `Your balance is ${formatCurrency(balance)}. Consider reducing expenses or adding income to get back on track. Review your spending categories to identify areas where you can cut back.`,
-                    'warning',
-                    'negative-balance'
-                );
+                let message, icon, title;
+                if (balance >= -100) {
+                    // Minor negative balance
+                    icon = '⚠️';
+                    title = 'Negative Balance Alert';
+                    message = `Your balance is currently ${formatCurrency(balance)}. This is a temporary shortfall that you can quickly recover from. Start by reviewing today's expenses and identify any non-essential purchases you can postpone. Consider transferring funds from savings if available, or look for quick ways to add income. The key is to act quickly before the deficit grows.`;
+                } else if (balance >= -500) {
+                    // Moderate negative balance
+                    icon = '🚨';
+                    title = 'Urgent: Significant Budget Deficit';
+                    message = `Your balance is ${formatCurrency(balance)}, indicating you're spending beyond your means. This requires immediate attention. Review your spending categories to identify where money is going—often dining out, subscriptions, or impulse purchases are culprits. Create a 7-day spending freeze on non-essentials. If you have income coming soon, prioritize covering necessities first.`;
+                } else {
+                    // Severe negative balance
+                    icon = '🆘';
+                    title = 'Critical Financial Situation';
+                    message = `Your balance of ${formatCurrency(balance)} indicates a serious financial crisis that needs immediate action. First, list all essential expenses (housing, food, utilities, transportation) versus non-essential ones. Contact service providers about payment plans or hardship programs. Look into community resources to reduce immediate expenses. Consider emergency income options like gig work. Create a recovery plan focusing on stopping the bleeding first, then rebuilding.`;
+                }
+                showAssistant(icon, title, message, 'warning', 'negative-balance');
                 return;
             }
-            
-            // Priority 2: Check over-budget categories
+    
+            // Priority 2: Check over-budget categories (tiered by severity)
             const overBudgetCategories = budgets.filter(b => {
                 const spent = transactions
                     .filter(t => t.type === 'expense' && t.category === b.category)
                     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
                 return spent > b.amount;
             });
-            
+    
             if (overBudgetCategories.length > 0 && !dismissedAssistants.includes('over-budget')) {
                 const catNames = overBudgetCategories.map(b => b.category).join(', ');
-                showAssistant(
-                    '📊',
-                    'Budget Exceeded',
-                    `You've exceeded your budget in ${overBudgetCategories.length} ${overBudgetCategories.length === 1 ? 'category' : 'categories'}: ${catNames}. Consider adjusting your spending or increasing your budget for next period.`,
-                    'warning',
-                    'over-budget'
-                );
+                const maxOverage = Math.max(...overBudgetCategories.map(b => {
+                    const spent = transactions
+                        .filter(t => t.type === 'expense' && t.category === b.category)
+                        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                    return ((spent - b.amount) / b.amount) * 100;
+                }));
+        
+                let message, icon, title;
+                if (overBudgetCategories.length === 1 && maxOverage <= 25) {
+                    // Single category, minor overage
+                    icon = '📊';
+                    title = `Budget Exceeded in ${catNames}`;
+                    message = `You've exceeded your ${catNames} budget by ${maxOverage.toFixed(0)}%. This is a manageable overage. Analyze what caused the increase—was it a one-time event or a pattern? If it's recurring, consider whether your budget allocation is realistic. For the remainder of this period, try to reduce spending in this category or offset it by cutting back in another area. Track daily to stay aware of your spending in real-time.`;
+                } else if (overBudgetCategories.length > 1) {
+                    // Multiple categories over budget
+                    icon = '📉';
+                    title = 'Multiple Budget Categories Exceeded';
+                    message = `You've exceeded budgets in ${overBudgetCategories.length} categories: ${catNames}. This suggests either unrealistic budget targets or a need for better spending discipline. Review each category: Are your budgets too restrictive? Did unexpected expenses arise? For categories like groceries or gas, try the envelope method—allocate a specific amount and stop when it's gone. Consider using cash for problem categories to create a physical spending limit.`;
+                } else {
+                    // Significantly over budget
+                    icon = '⛔';
+                    title = 'Severe Budget Overrun';
+                    message = `Your spending in ${catNames} is ${maxOverage.toFixed(0)}% over budget, which is significantly beyond your plan. This level of overspending can derail your financial goals. Immediately pause all spending in this category unless absolutely necessary. Identify the trigger: Was it an emergency, lifestyle creep, or impulse spending? If it's a genuine need, adjust your budget realistically. If it's discretionary, implement a 48-hour rule before any purchase over $20 to curb impulse buying.`;
+                }
+                showAssistant(icon, title, message, 'warning', 'over-budget');
                 return;
             }
-            
+    
             // Priority 3: Check budgets near limit (75-100%)
             const nearLimitBudgets = budgets.filter(b => {
                 const spent = transactions
@@ -4652,100 +4938,127 @@ function saveData() {
                 const percentage = (spent / b.amount) * 100;
                 return percentage >= 75 && percentage <= 100;
             });
-            
+    
             if (nearLimitBudgets.length > 0 && !dismissedAssistants.includes('near-limit')) {
                 const catNames = nearLimitBudgets.map(b => b.category).join(', ');
-                showAssistant(
-                    '⚡',
-                    'Budget Alert',
-                    `You're approaching your budget limit in: ${catNames}. You've used 75% or more of your allocated budget. Plan your remaining spending carefully.`,
-                    'default',
-                    'near-limit'
-                );
+                const avgPercentage = nearLimitBudgets.reduce((sum, b) => {
+                    const spent = transactions
+                        .filter(t => t.type === 'expense' && t.category === b.category)
+                        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                    return sum + ((spent / b.amount) * 100);
+                }, 0) / nearLimitBudgets.length;
+        
+                let message;
+                if (nearLimitBudgets.length === 1) {
+                    message = `You're at ${avgPercentage.toFixed(0)}% of your ${catNames} budget. This is the danger zone where many people slip up. Stay vigilant—every small purchase counts now. If possible, challenge yourself to come in under budget. The savings can roll over to next period or go toward a financial goal. You've got this!`;
+                } else {
+                    message = `You're approaching your budget limits in ${nearLimitBudgets.length} categories: ${catNames}. This is actually good news—it means you're tracking closely to your plan. However, the final stretch is crucial. Review your upcoming obligations in these categories. Can any purchases wait until next period? Prioritize needs over wants for the remaining days. Your discipline now will pay off in financial stability.`;
+                }
+                showAssistant('⚡', 'Budget Alert', message, 'default', 'near-limit');
                 return;
             }
-            
+    
             // Priority 4: No income but has expenses
             if (totalIncome === 0 && totalExpenses > 0 && !dismissedAssistants.includes('no-income')) {
                 showAssistant(
                     '💰',
-                    'Add Income',
-                    `You have ${formatCurrency(totalExpenses)} in expenses but no income recorded. Add your income sources to get an accurate view of your financial health.`,
+                    'Add Your Income Sources',
+                    `You've logged ${formatCurrency(totalExpenses)} in expenses but haven't recorded any income yet. Adding your income is crucial for understanding your true financial picture. Include all sources: salary, freelance work, side hustles, investment returns, or government benefits. Even if income is irregular, estimate monthly averages. This helps you see if you're living within your means and plan for savings. Your income is the foundation of your budget—let's get it recorded!`,
                     'default',
                     'no-income'
                 );
                 return;
             }
-            
-            // Priority 5: High expense-to-income ratio (>80%)
+    
+            // Priority 5: High expense-to-income ratio (tiered)
             if (totalIncome > 0 && totalExpenses > 0) {
                 const ratio = (totalExpenses / totalIncome) * 100;
-                if (ratio > 80 && ratio < 100 && !dismissedAssistants.includes('high-ratio')) {
+        
+                if (ratio > 100 && !dismissedAssistants.includes('spending-exceeds-income')) {
+                    showAssistant(
+                        '🚨',
+                        'Urgent: Unsustainable Spending Pattern',
+                        `You're spending ${ratio.toFixed(0)}% of your income—more than you earn. This is unsustainable and leads to debt accumulation. You're likely using credit cards or loans to cover the gap. Stop all non-essential spending immediately. Create a bare-bones budget covering only: housing, utilities, food, transportation, and minimum debt payments. Everything else must wait. If your essential expenses exceed your income, you need to either increase income urgently or reduce essential costs (move to cheaper housing, get a roommate, use public assistance programs). This is a financial emergency requiring immediate intervention.`,
+                        'warning',
+                        'spending-exceeds-income'
+                    );
+                    return;
+                } else if (ratio >= 90 && ratio <= 100 && !dismissedAssistants.includes('very-high-ratio')) {
+                    showAssistant(
+                        '⚠️',
+                        'Critical: Living Paycheck to Paycheck',
+                        `At ${ratio.toFixed(0)}% of income spent, you're living paycheck to paycheck with no buffer for emergencies. This is financially precarious—one unexpected expense could create a crisis. Immediate action needed: First, identify your "big three" expenses (usually housing, transportation, food) and see if any can be reduced. Can you refinance, get a roommate, use public transit, or meal prep? Second, find ways to increase income: ask for a raise, start a side hustle, or sell unused items. Building even a $500 emergency fund should be your top priority.`,
+                        'warning',
+                        'very-high-ratio'
+                    );
+                    return;
+                } else if (ratio > 80 && ratio < 90 && !dismissedAssistants.includes('high-ratio')) {
+                    const remaining = 100 - ratio;
                     showAssistant(
                         '📈',
-                        'Spending Alert',
-                        `You're spending ${ratio.toFixed(0)}% of your income. Financial experts recommend keeping expenses below 80% to build savings. Try to reduce discretionary spending.`,
+                        'Spending Alert: Limited Savings Buffer',
+                        `You're spending ${ratio.toFixed(0)}% of your income, leaving only ${remaining.toFixed(0)}% for savings and unexpected expenses. Financial experts recommend keeping expenses below 80% to build financial security. Even small reductions compound over time. Try the "1% challenge": reduce spending by just 1% this month. Focus on subscription audits, meal planning, or negotiating bills. Small changes create breathing room in your budget and help you build an emergency fund.`,
                         'default',
                         'high-ratio'
                     );
                     return;
                 }
             }
-            
+    
             // Priority 6: No budgets set but has expenses
             if (budgets.length === 0 && totalExpenses > 0 && !dismissedAssistants.includes('no-budgets')) {
                 showAssistant(
                     '🎯',
-                    'Set Budgets',
-                    'You have expenses but no budgets set. Creating budgets helps you control spending and reach your financial goals. Start by setting limits for your top spending categories.',
+                    'Start Budgeting for Financial Control',
+                    `You're tracking expenses, which is great—but without budgets, you're driving without a map. Budgets aren't about restriction; they're about intention. They tell your money where to go instead of wondering where it went. Start simple: look at your spending from the past month and set budgets slightly below those amounts for your top 3 categories. The 50/30/20 rule is a good framework: 50% needs, 30% wants, 20% savings. Budgets give you permission to spend guilt-free within limits and highlight problem areas.`,
                     'default',
                     'no-budgets'
                 );
                 return;
             }
-            
+    
             // Priority 7: No savings goals but has positive balance
             if (goals.length === 0 && balance > 100 && !dismissedAssistants.includes('no-goals')) {
                 showAssistant(
                     '🎯',
-                    'Create Savings Goals',
-                    `You have a positive balance of ${formatCurrency(balance)}. Consider setting savings goals to build your financial future. Whether it's an emergency fund, vacation, or down payment - having goals keeps you motivated!`,
+                    'Turn Your Balance Into Goals',
+                    `Great job! You have a positive balance of ${formatCurrency(balance)}. Now let's make that money work toward your future. Setting specific savings goals increases the likelihood of achieving them by 42% according to financial research. Start with three types of goals: an emergency fund (3-6 months of expenses), a short-term goal (vacation, new phone, within 1 year), and a long-term goal (down payment, retirement, 5+ years). Breaking big goals into smaller milestones makes them feel achievable and keeps you motivated.`,
                     'success',
                     'no-goals'
                 );
                 return;
             }
-            
+    
             // Priority 8: Healthy finances - positive feedback
             if (balance > 0 && totalIncome > 0 && totalExpenses > 0) {
                 const ratio = (totalExpenses / totalIncome) * 100;
                 if (ratio < 70 && budgets.length > 0 && !dismissedAssistants.includes('healthy')) {
                     showAssistant(
                         '🎉',
-                        'Great Job!',
-                        `You're managing your finances well! You're spending only ${ratio.toFixed(0)}% of your income and staying within your budgets. Keep up the excellent work!`,
+                        'Outstanding Financial Management!',
+                        `Impressive! You're spending only ${ratio.toFixed(0)}% of your income and staying within all your budgets. This level of financial discipline puts you ahead of 80% of people. You're building wealth through intentional spending. Keep this momentum going. Consider: Are you saving enough for retirement? Do you have 3-6 months of expenses in emergency savings? Are you investing for long-term growth? You've mastered the basics—now you can optimize for wealth building. Your future self will thank you!`,
                         'success',
                         'healthy'
                     );
                     return;
                 }
             }
-            
+    
             // No alerts needed - hide banner
             hideAssistant();
         }
-        
+
         function showAssistant(icon, title, message, type = 'default', id = '') {
             const banner = document.getElementById('assistantBanner');
             const iconEl = banner.querySelector('.assistant-icon');
             const titleEl = document.getElementById('assistantTitle');
             const messageEl = document.getElementById('assistantMessage');
-            
+    
             // Update content
             iconEl.textContent = icon;
             titleEl.textContent = title;
             messageEl.textContent = message;
-            
+    
             // Update styling
             banner.className = 'assistant-banner';
             if (type === 'warning') {
@@ -4753,42 +5066,39 @@ function saveData() {
             } else if (type === 'success') {
                 banner.classList.add('success');
             }
-            
-            // Store current assistant ID
+    
+            // Store the ID for dismissal
             banner.dataset.assistantId = id;
-            
+    
             // Show banner
             banner.style.display = 'flex';
         }
-        
+
         function hideAssistant() {
             const banner = document.getElementById('assistantBanner');
             banner.style.display = 'none';
         }
-        
+
         function dismissAssistant() {
             const banner = document.getElementById('assistantBanner');
             const assistantId = banner.dataset.assistantId;
-            
-            // Remember this assistant was dismissed
+    
             if (assistantId && !dismissedAssistants.includes(assistantId)) {
                 dismissedAssistants.push(assistantId);
             }
-            
+    
             hideAssistant();
-            
-            // Check for next priority assistant
-            setTimeout(() => {
-                checkFinancialAssistant();
-            }, 100);
+    
+            // Check for next assistant message
+            setTimeout(checkFinancialAssistant, 100);
         }
-        
-        // Reset dismissed assistants when data changes significantly
+
+
+        // Reset dismissals when adding transactions or changing budgets
         function resetAssistantDismissals() {
             dismissedAssistants = [];
         }
         
-        // Reset dismissals when adding transactions or changing budgets
         const originalAddTransaction = addTransaction;
         addTransaction = function() {
             resetAssistantDismissals();
