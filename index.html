@@ -239,7 +239,7 @@
         
         .balance-details {
             display: flex;
-            gap: 16px;
+            gap: 48px;
             align-items: flex-start;
         }
         
@@ -328,9 +328,13 @@
             align-items: flex-start;
             min-width: 0;
             max-height: 180px;
-            overflow-y: auto;
+            overflow-y: visible;
             overflow-x: hidden;
             padding-right: 4px;
+        }
+        
+        .chart-legend-container.scrollable {
+            overflow-y: auto;
         }
         
         .chart-legend-container::-webkit-scrollbar {
@@ -555,6 +559,13 @@
         .stat-label {
             font-size: 12px;
             color: var(--gray-600);
+        }
+        
+        .stat-remaining {
+            font-size: 11px;
+            color: var(--gray-500);
+            margin-top: 4px;
+            font-weight: 500;
         }
         
         .daily-limit-progress {
@@ -1919,6 +1930,7 @@
             <div class="stat-card" id="dailyLimitCard" onclick="showModal('settingsModal')">
                 <div class="stat-value" id="dailyLimitValue">Set Daily Budget</div>
                 <div class="stat-label">Set Daily Budget ✏️</div>
+                <div id="dailyLimitRemaining" class="stat-remaining" style="display: none;"></div>
                 <div id="dailyLimitProgress" class="daily-limit-progress" style="display: none;">
                     <div id="dailyLimitProgressBar" class="daily-limit-progress-bar"></div>
                 </div>
@@ -2318,13 +2330,34 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Set Daily Budget</h2>
+                <h2 class="modal-title">Settings</h2>
                 <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
             </div>
             
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label" for="dailyLimit">Daily Budget ($/day)</label>
+                    <label class="form-label" for="currencySelect">Currency</label>
+                    <select id="currencySelect" class="form-input" onchange="updateCurrency()">
+                        <option value="USD">USD - US Dollar ($)</option>
+                        <option value="EUR">EUR - Euro (€)</option>
+                        <option value="GBP">GBP - British Pound (£)</option>
+                        <option value="JPY">JPY - Japanese Yen (¥)</option>
+                        <option value="CAD">CAD - Canadian Dollar ($)</option>
+                        <option value="AUD">AUD - Australian Dollar ($)</option>
+                        <option value="CHF">CHF - Swiss Franc (Fr)</option>
+                        <option value="CNY">CNY - Chinese Yuan (¥)</option>
+                        <option value="INR">INR - Indian Rupee (₹)</option>
+                        <option value="MXN">MXN - Mexican Peso ($)</option>
+                        <option value="BRL">BRL - Brazilian Real (R$)</option>
+                        <option value="ZAR">ZAR - South African Rand (R)</option>
+                        <option value="KRW">KRW - South Korean Won (₩)</option>
+                        <option value="SGD">SGD - Singapore Dollar ($)</option>
+                        <option value="NZD">NZD - New Zealand Dollar ($)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="dailyLimit">Daily Budget</label>
                     <input type="number" id="dailyLimit" class="form-input" placeholder="0.00" step="0.01">
                 </div>
             </div>
@@ -2391,7 +2424,9 @@
         let debts = [];
         let selectedDebtIdForContribution = null;  // added: tracks which debt we're contributing to
         let settings = {
-            dailyLimit: 0
+            dailyLimit: 0,
+            currency: 'USD',
+            locale: 'en-US'
         };
         let charts = {};
         let currentTransactionType = 'expense';
@@ -2553,6 +2588,12 @@
         // Modal management
         function showModal(modalId) {
             document.getElementById(modalId).classList.add('active');
+            
+            // Populate settings modal with current values
+            if (modalId === 'settingsModal') {
+                document.getElementById('dailyLimit').value = settings.dailyLimit || '';
+                document.getElementById('currencySelect').value = settings.currency || 'USD';
+            }
         }
 
         function closeModal(modalId) {
@@ -2897,11 +2938,42 @@
                 }
             }
         }        // Settings management
-function saveSettings() {
+        function updateCurrency() {
+            const currencySelect = document.getElementById('currencySelect');
+            const selectedCurrency = currencySelect.value;
+            
+            // Map currency to locale
+            const currencyLocaleMap = {
+                'USD': 'en-US',
+                'EUR': 'de-DE',
+                'GBP': 'en-GB',
+                'JPY': 'ja-JP',
+                'CAD': 'en-CA',
+                'AUD': 'en-AU',
+                'CHF': 'de-CH',
+                'CNY': 'zh-CN',
+                'INR': 'en-IN',
+                'MXN': 'es-MX',
+                'BRL': 'pt-BR',
+                'ZAR': 'en-ZA',
+                'KRW': 'ko-KR',
+                'SGD': 'en-SG',
+                'NZD': 'en-NZ'
+            };
+            
+            settings.currency = selectedCurrency;
+            settings.locale = currencyLocaleMap[selectedCurrency] || 'en-US';
+        }
+        
+        function saveSettings() {
             settings.dailyLimit = parseFloat(document.getElementById('dailyLimit').value) || 0;
+            
+            // Update currency from selector
+            updateCurrency();
             
             saveData();
             updateDailyLimit();
+            updateDashboard();
             closeModal('settingsModal');
             showNotification('Settings saved');
         }
@@ -2989,6 +3061,7 @@ function saveSettings() {
         function updateDailyLimit() {
             const dailyLimitCard = document.getElementById('dailyLimitCard');
             const dailyLimitValue = document.getElementById('dailyLimitValue');
+            const dailyLimitRemaining = document.getElementById('dailyLimitRemaining');
             const dailyLimitProgress = document.getElementById('dailyLimitProgress');
             const dailyLimitProgressBar = document.getElementById('dailyLimitProgressBar');
             
@@ -2998,9 +3071,23 @@ function saveSettings() {
                     .filter(t => t.type === 'expense' && new Date(t.date).toDateString() === today)
                     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
                 
+                const remaining = settings.dailyLimit - todaySpending;
                 const percentage = (todaySpending / settings.dailyLimit) * 100;
                 
                 dailyLimitValue.textContent = formatCurrency(todaySpending) + ' / ' + formatCurrency(settings.dailyLimit);
+                
+                // Show remaining balance
+                if (dailyLimitRemaining) {
+                    if (remaining >= 0) {
+                        dailyLimitRemaining.textContent = formatCurrency(remaining) + ' remaining';
+                        dailyLimitRemaining.style.color = 'var(--success)';
+                    } else {
+                        dailyLimitRemaining.textContent = formatCurrency(Math.abs(remaining)) + ' over budget';
+                        dailyLimitRemaining.style.color = 'var(--danger)';
+                    }
+                    dailyLimitRemaining.style.display = 'block';
+                }
+                
                 dailyLimitProgress.style.display = 'block';
                 dailyLimitProgressBar.style.width = Math.min(percentage, 100) + '%';
                 
@@ -3013,6 +3100,7 @@ function saveSettings() {
                 }
             } else {
                 dailyLimitValue.textContent = 'Set Daily Budget';
+                if (dailyLimitRemaining) dailyLimitRemaining.style.display = 'none';
                 dailyLimitProgress.style.display = 'none';
             }
         }
@@ -3500,8 +3588,8 @@ function saveSettings() {
                 charts.expense.data.datasets[0].data = amounts;
                 charts.expense.data.datasets[0].backgroundColor = backgroundColor;
                 
-                // Update legend with all categories and amounts
-                updateExpenseLegend(categories, amounts);
+                // Update legend with all categories, amounts, and colors to ensure consistency
+                updateExpenseLegend(categories, amounts, backgroundColor);
             }
             
             charts.expense.update();
@@ -3545,14 +3633,15 @@ function saveSettings() {
             charts.budgetDonut.update();
         }
 
-        function updateExpenseLegend(categories, amounts = []) {
+        function updateExpenseLegend(categories, amounts = [], colors = []) {
             const legendGrid = document.getElementById('expenseLegendGrid');
             
             if (!legendGrid) return;
             
             // Build legend items from the exact same data used by the chart
             const legendHTML = categories.map((category, index) => {
-                const color = getStableColor(category, index);
+                // Use the color passed from the chart, or fallback to getStableColor
+                const color = colors[index] || getStableColor(category, index);
                 const amount = amounts[index] || 0;
                 const formattedAmount = formatCurrency(amount);
                 
@@ -3586,6 +3675,16 @@ function saveSettings() {
             if (expandBtn) {
                 expandBtn.style.display = allLegendItems.length > visibleItemsCount ? 'flex' : 'none';
             }
+            
+            // Add scrollable class only if more than 5 items
+            const legendContainer = legendGrid.closest('.chart-legend-container');
+            if (legendContainer) {
+                if (categories.length > 5) {
+                    legendContainer.classList.add('scrollable');
+                } else {
+                    legendContainer.classList.remove('scrollable');
+                }
+            }
         }
 
         function updateBudgetLegend(labels, amounts = []) {
@@ -3606,6 +3705,12 @@ function saveSettings() {
                     <span>Remaining - ${formatCurrency(remainingAmount)}</span>
                 </div>
             `;
+            
+            // Add scrollable class only if more than 5 items (budget always has 2, so remove scrollable)
+            const chartLegendContainer = legendContainer.closest('.chart-legend-container');
+            if (chartLegendContainer) {
+                chartLegendContainer.classList.remove('scrollable');
+            }
         }
 
         function updateDashboardChart() {
@@ -3849,9 +3954,9 @@ function saveSettings() {
 
         // Utility functions
         function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-US', {
+            return new Intl.NumberFormat(settings.locale || 'en-US', {
                 style: 'currency',
-                currency: 'USD'
+                currency: settings.currency || 'USD'
             }).format(amount);
         }
 
@@ -4876,17 +4981,17 @@ function saveData() {
                     // Minor negative balance
                     icon = '⚠️';
                     title = 'Negative Balance Alert';
-                    message = `Your balance is currently ${formatCurrency(balance)}. This is a temporary shortfall that you can quickly recover from. Start by reviewing today's expenses and identify any non-essential purchases you can postpone. Consider transferring funds from savings if available, or look for quick ways to add income. The key is to act quickly before the deficit grows.`;
+                    message = `Your balance is currently ${formatCurrency(balance)}. This is a temporary shortfall that you can quickly recover from.\n\n• Review today's expenses and identify non-essential purchases to postpone\n• Consider transferring funds from savings if available\n• Look for quick ways to add income\n• Act quickly before the deficit grows`;
                 } else if (balance >= -500) {
                     // Moderate negative balance
                     icon = '🚨';
                     title = 'Urgent: Significant Budget Deficit';
-                    message = `Your balance is ${formatCurrency(balance)}, indicating you're spending beyond your means. This requires immediate attention. Review your spending categories to identify where money is going—often dining out, subscriptions, or impulse purchases are culprits. Create a 7-day spending freeze on non-essentials. If you have income coming soon, prioritize covering necessities first.`;
+                    message = `Your balance is ${formatCurrency(balance)}, indicating you're spending beyond your means. This requires immediate attention.\n\n• Review spending categories to identify where money is going\n• Common culprits: dining out, subscriptions, impulse purchases\n• Create a 7-day spending freeze on non-essentials\n• If income is coming soon, prioritize covering necessities first`;
                 } else {
                     // Severe negative balance
                     icon = '🆘';
                     title = 'Critical Financial Situation';
-                    message = `Your balance of ${formatCurrency(balance)} indicates a serious financial crisis that needs immediate action. First, list all essential expenses (housing, food, utilities, transportation) versus non-essential ones. Contact service providers about payment plans or hardship programs. Look into community resources to reduce immediate expenses. Consider emergency income options like gig work. Create a recovery plan focusing on stopping the bleeding first, then rebuilding.`;
+                    message = `Your balance of ${formatCurrency(balance)} indicates a serious financial crisis that needs immediate action.\n\n• List all essential expenses (housing, food, utilities, transportation) versus non-essential ones\n• Contact service providers about payment plans or hardship programs\n• Look into community resources to reduce immediate expenses\n• Consider emergency income options like gig work\n• Create a recovery plan focusing on stopping the bleeding first, then rebuilding`;
                 }
                 showAssistant(icon, title, message, 'warning', 'negative-balance');
                 return;
@@ -4914,17 +5019,17 @@ function saveData() {
                     // Single category, minor overage
                     icon = '📊';
                     title = `Budget Exceeded in ${catNames}`;
-                    message = `You've exceeded your ${catNames} budget by ${maxOverage.toFixed(0)}%. This is a manageable overage. Analyze what caused the increase—was it a one-time event or a pattern? If it's recurring, consider whether your budget allocation is realistic. For the remainder of this period, try to reduce spending in this category or offset it by cutting back in another area. Track daily to stay aware of your spending in real-time.`;
+                    message = `You've exceeded your ${catNames} budget by ${maxOverage.toFixed(0)}%. This is a manageable overage.\n\n• Analyze what caused the increase—one-time event or pattern?\n• If recurring, consider whether your budget allocation is realistic\n• For the remainder of this period, reduce spending in this category\n• Or offset it by cutting back in another area\n• Track daily to stay aware of your spending in real-time`;
                 } else if (overBudgetCategories.length > 1) {
                     // Multiple categories over budget
                     icon = '📉';
                     title = 'Multiple Budget Categories Exceeded';
-                    message = `You've exceeded budgets in ${overBudgetCategories.length} categories: ${catNames}. This suggests either unrealistic budget targets or a need for better spending discipline. Review each category: Are your budgets too restrictive? Did unexpected expenses arise? For categories like groceries or gas, try the envelope method—allocate a specific amount and stop when it's gone. Consider using cash for problem categories to create a physical spending limit.`;
+                    message = `You've exceeded budgets in ${overBudgetCategories.length} categories: ${catNames}.\n\n• This suggests unrealistic budget targets or need for better discipline\n• Review each category: Are budgets too restrictive?\n• Did unexpected expenses arise?\n• Try the envelope method: allocate specific amount, stop when gone\n• Consider using cash for problem categories\n• Creates a physical spending limit`;
                 } else {
                     // Significantly over budget
                     icon = '⛔';
                     title = 'Severe Budget Overrun';
-                    message = `Your spending in ${catNames} is ${maxOverage.toFixed(0)}% over budget, which is significantly beyond your plan. This level of overspending can derail your financial goals. Immediately pause all spending in this category unless absolutely necessary. Identify the trigger: Was it an emergency, lifestyle creep, or impulse spending? If it's a genuine need, adjust your budget realistically. If it's discretionary, implement a 48-hour rule before any purchase over $20 to curb impulse buying.`;
+                    message = `Your spending in ${catNames} is ${maxOverage.toFixed(0)}% over budget, significantly beyond your plan.\n\n• This level of overspending can derail your financial goals\n• Immediately pause all spending in this category unless necessary\n• Identify the trigger: emergency, lifestyle creep, or impulse spending?\n• If genuine need, adjust your budget realistically\n• If discretionary, implement 48-hour rule before purchases over $20\n• This helps curb impulse buying`;
                 }
                 showAssistant(icon, title, message, 'warning', 'over-budget');
                 return;
@@ -4950,9 +5055,9 @@ function saveData() {
         
                 let message;
                 if (nearLimitBudgets.length === 1) {
-                    message = `You're at ${avgPercentage.toFixed(0)}% of your ${catNames} budget. This is the danger zone where many people slip up. Stay vigilant—every small purchase counts now. If possible, challenge yourself to come in under budget. The savings can roll over to next period or go toward a financial goal. You've got this!`;
+                    message = `You're at ${avgPercentage.toFixed(0)}% of your ${catNames} budget.\n\n• This is the danger zone where many people slip up\n• Stay vigilant—every small purchase counts now\n• Challenge yourself to come in under budget\n• Savings can roll over to next period or go toward a goal\n• You've got this!`;
                 } else {
-                    message = `You're approaching your budget limits in ${nearLimitBudgets.length} categories: ${catNames}. This is actually good news—it means you're tracking closely to your plan. However, the final stretch is crucial. Review your upcoming obligations in these categories. Can any purchases wait until next period? Prioritize needs over wants for the remaining days. Your discipline now will pay off in financial stability.`;
+                    message = `You're approaching your budget limits in ${nearLimitBudgets.length} categories: ${catNames}.\n\n• This is good news—you're tracking closely to your plan\n• However, the final stretch is crucial\n• Review upcoming obligations in these categories\n• Can any purchases wait until next period?\n• Prioritize needs over wants for remaining days\n• Your discipline now will pay off in financial stability`;
                 }
                 showAssistant('⚡', 'Budget Alert', message, 'default', 'near-limit');
                 return;
@@ -4963,7 +5068,7 @@ function saveData() {
                 showAssistant(
                     '💰',
                     'Add Your Income Sources',
-                    `You've logged ${formatCurrency(totalExpenses)} in expenses but haven't recorded any income yet. Adding your income is crucial for understanding your true financial picture. Include all sources: salary, freelance work, side hustles, investment returns, or government benefits. Even if income is irregular, estimate monthly averages. This helps you see if you're living within your means and plan for savings. Your income is the foundation of your budget—let's get it recorded!`,
+                    `You've logged ${formatCurrency(totalExpenses)} in expenses but haven't recorded any income yet.\n\n• Adding your income is crucial for understanding your true financial picture\n• Include all sources: salary, freelance work, side hustles, investment returns, or government benefits\n• Even if income is irregular, estimate monthly averages\n• This helps you see if you're living within your means and plan for savings\n• Your income is the foundation of your budget—let's get it recorded!`,
                     'default',
                     'no-income'
                 );
@@ -4978,7 +5083,7 @@ function saveData() {
                     showAssistant(
                         '🚨',
                         'Urgent: Unsustainable Spending Pattern',
-                        `You're spending ${ratio.toFixed(0)}% of your income—more than you earn. This is unsustainable and leads to debt accumulation. You're likely using credit cards or loans to cover the gap. Stop all non-essential spending immediately. Create a bare-bones budget covering only: housing, utilities, food, transportation, and minimum debt payments. Everything else must wait. If your essential expenses exceed your income, you need to either increase income urgently or reduce essential costs (move to cheaper housing, get a roommate, use public assistance programs). This is a financial emergency requiring immediate intervention.`,
+                        `You're spending ${ratio.toFixed(0)}% of your income—more than you earn. This is unsustainable and leads to debt accumulation.\n\n• You're likely using credit cards or loans to cover the gap\n• Stop all non-essential spending immediately\n• Create a bare-bones budget: housing, utilities, food, transportation, minimum debt payments\n• Everything else must wait\n• If essential expenses exceed income, increase income urgently or reduce costs\n• Consider: cheaper housing, roommate, public assistance programs\n• This is a financial emergency requiring immediate intervention`,
                         'warning',
                         'spending-exceeds-income'
                     );
@@ -4987,7 +5092,7 @@ function saveData() {
                     showAssistant(
                         '⚠️',
                         'Critical: Living Paycheck to Paycheck',
-                        `At ${ratio.toFixed(0)}% of income spent, you're living paycheck to paycheck with no buffer for emergencies. This is financially precarious—one unexpected expense could create a crisis. Immediate action needed: First, identify your "big three" expenses (usually housing, transportation, food) and see if any can be reduced. Can you refinance, get a roommate, use public transit, or meal prep? Second, find ways to increase income: ask for a raise, start a side hustle, or sell unused items. Building even a $500 emergency fund should be your top priority.`,
+                        `At ${ratio.toFixed(0)}% of income spent, you're living paycheck to paycheck with no buffer for emergencies.\n\n• This is financially precarious—one unexpected expense could create a crisis\n• Identify your "big three" expenses: housing, transportation, food\n• Can you refinance, get a roommate, use public transit, or meal prep?\n• Find ways to increase income: ask for a raise, start a side hustle, sell unused items\n• Building even a $500 emergency fund should be your top priority`,
                         'warning',
                         'very-high-ratio'
                     );
@@ -4997,7 +5102,7 @@ function saveData() {
                     showAssistant(
                         '📈',
                         'Spending Alert: Limited Savings Buffer',
-                        `You're spending ${ratio.toFixed(0)}% of your income, leaving only ${remaining.toFixed(0)}% for savings and unexpected expenses. Financial experts recommend keeping expenses below 80% to build financial security. Even small reductions compound over time. Try the "1% challenge": reduce spending by just 1% this month. Focus on subscription audits, meal planning, or negotiating bills. Small changes create breathing room in your budget and help you build an emergency fund.`,
+                        `You're spending ${ratio.toFixed(0)}% of your income, leaving only ${remaining.toFixed(0)}% for savings and unexpected expenses.\n\n• Financial experts recommend keeping expenses below 80%\n• Even small reductions compound over time\n• Try the "1% challenge": reduce spending by just 1% this month\n• Focus on: subscription audits, meal planning, negotiating bills\n• Small changes create breathing room and help build an emergency fund`,
                         'default',
                         'high-ratio'
                     );
@@ -5010,7 +5115,7 @@ function saveData() {
                 showAssistant(
                     '🎯',
                     'Start Budgeting for Financial Control',
-                    `You're tracking expenses, which is great—but without budgets, you're driving without a map. Budgets aren't about restriction; they're about intention. They tell your money where to go instead of wondering where it went. Start simple: look at your spending from the past month and set budgets slightly below those amounts for your top 3 categories. The 50/30/20 rule is a good framework: 50% needs, 30% wants, 20% savings. Budgets give you permission to spend guilt-free within limits and highlight problem areas.`,
+                    `You're tracking expenses, which is great—but without budgets, you're driving without a map.\n\n• Budgets aren't about restriction; they're about intention\n• They tell your money where to go instead of wondering where it went\n• Start simple: review past month's spending\n• Set budgets slightly below those amounts for your top 3 categories\n• Try the 50/30/20 rule: 50% needs, 30% wants, 20% savings\n• Budgets let you spend guilt-free within limits and highlight problem areas`,
                     'default',
                     'no-budgets'
                 );
@@ -5022,7 +5127,7 @@ function saveData() {
                 showAssistant(
                     '🎯',
                     'Turn Your Balance Into Goals',
-                    `Great job! You have a positive balance of ${formatCurrency(balance)}. Now let's make that money work toward your future. Setting specific savings goals increases the likelihood of achieving them by 42% according to financial research. Start with three types of goals: an emergency fund (3-6 months of expenses), a short-term goal (vacation, new phone, within 1 year), and a long-term goal (down payment, retirement, 5+ years). Breaking big goals into smaller milestones makes them feel achievable and keeps you motivated.`,
+                    `Great job! You have a positive balance of ${formatCurrency(balance)}. Now let's make that money work toward your future.\n\n• Setting specific savings goals increases achievement likelihood by 42%\n• Start with three goal types:\n• Emergency fund: 3-6 months of expenses\n• Short-term goal: vacation, new phone (within 1 year)\n• Long-term goal: down payment, retirement (5+ years)\n• Break big goals into smaller milestones to stay motivated`,
                     'success',
                     'no-goals'
                 );
@@ -5036,7 +5141,7 @@ function saveData() {
                     showAssistant(
                         '🎉',
                         'Outstanding Financial Management!',
-                        `Impressive! You're spending only ${ratio.toFixed(0)}% of your income and staying within all your budgets. This level of financial discipline puts you ahead of 80% of people. You're building wealth through intentional spending. Keep this momentum going. Consider: Are you saving enough for retirement? Do you have 3-6 months of expenses in emergency savings? Are you investing for long-term growth? You've mastered the basics—now you can optimize for wealth building. Your future self will thank you!`,
+                        `Impressive! You're spending only ${ratio.toFixed(0)}% of your income and staying within all your budgets.\n\n• This level of discipline puts you ahead of 80% of people\n• You're building wealth through intentional spending\n• Keep this momentum going\n• Consider: Are you saving enough for retirement?\n• Do you have 3-6 months of expenses in emergency savings?\n• Are you investing for long-term growth?\n• You've mastered the basics—now optimize for wealth building!`,
                         'success',
                         'healthy'
                     );
@@ -5057,6 +5162,8 @@ function saveData() {
             // Update content
             iconEl.textContent = icon;
             titleEl.textContent = title;
+            // Preserve line breaks and format message
+            messageEl.style.whiteSpace = 'pre-line';
             messageEl.textContent = message;
     
             // Update styling
